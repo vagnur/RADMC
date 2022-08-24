@@ -28,6 +28,26 @@ void dust_species::set_frequency(std::vector<double> frequency){
     this -> frequency = frequency;
 }
 
+std::vector<std::vector<std::vector<double>>> dust_species::get_densities(){
+    return this -> densities;
+}
+
+std::vector<double> dust_species::get_frequency(){
+    return this -> frequency;
+}
+
+std::vector<double> dust_species::get_absoprtion(){
+    return this -> kappa_absorption;
+}
+
+std::vector<double> dust_species::get_scattering(){
+    return this -> kappa_scattering;
+}
+
+std::vector<double> dust_species::get_g(){
+    return this -> g;
+}
+
 dust_species::~dust_species(void){
     ;
 }

@@ -5,13 +5,11 @@ frequencies::frequencies(void){
 }
 
 void frequencies::read_frequencies(void){
-    //TODO : Hay que leer el archivo wavelenght
-    //Eso ta en micrones, hay que transformar a frecuencia
-    //TODO : Evaluar dónde dejar los valores constantes
-    //TODO : Evaluar si usar los valores calculados o dejar las constantes del código orignal
     //Light speed
     //double light_speed = 29979245800 // in cm / s^2
-    double light_speed = 2.9979245800000e10;
+    //double light_speed = 2.9979245800000e10;
+    //double light_speed = 2.9979245800000e10;
+    double light_speed_microns = common::get_light_speed_microns();
     //Variable to store the number of frequency points for the stellar spectra
     int number_of_frequency_points;
     //Variable to store each frequency before transformation and after transformation
@@ -38,7 +36,7 @@ void frequencies::read_frequencies(void){
         //We are reading the wavelenght (lambda), but we want the frequency.
         //We can calculate it from f = v / lambda. Since the frequency is in micron, we need
         //to do C times 1e4 (that's going to be v in the equation) in order to get the lambda value.
-        frequency = 1e4 * (light_speed) / lambda;
+        frequency = light_speed_microns / lambda;
         //TODO : En otra parte del código simplemente hacen que Hz = 2.99792458E+14 / wavelenght in micrones
         //TODO : Preguntar seba
         //frequency = 2.99792458e14 / lambda;
@@ -78,6 +76,14 @@ void frequencies::calculate_mean_intensity(void){
 
 int frequencies::get_number_frequency_points(){
     return this -> number_of_frequencies;
+}
+
+std::vector<double> frequencies::get_frequencies(){
+    return this -> frequency_values;
+}
+
+std::vector<double> frequencies::get_mean_intensity(){
+    return this -> mean_intensity_values;
 }
 
 frequencies::~frequencies(void){

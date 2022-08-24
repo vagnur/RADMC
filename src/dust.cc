@@ -50,6 +50,7 @@ void dust::read_dust_species_density(int number_of_point_x,int number_of_point_y
         this -> dust_species_information[specie].set_density(specie_density);
         //Then we clear the 3d vector in order to pass to the next specie
         //TODO : ¿Será necesario borrar la memoria de cada dimension?
+        //TODO : Investigar y ver efecto en rendimiento
         specie_density.clear();
     }
     //We finish by clossing the input file
@@ -76,23 +77,25 @@ void dust::read_opacities_meta(void){
     input_file >> iformat;
     //We read the number of species from the file
     input_file >> number_of_species;
+    std::cout << iformat << " " << number_of_species << std::endl;
     for (int i = 0; i < number_of_species; ++i) {
         //TODO : El archivo de entrada puede tener comentarios y elementos raros, hay que ver como generalizar
         //TODO : el método para que funcione con archivos con comentarios y sin comentarios
-        //First we read the separation line (only because the format of the input file)
-        //NOTE : We are not reading the specie name, but it's not necessary to make a new string
-        input_file >> specie_name;
         //Then we read the input style
         input_file >> input_style;
         //We read the commentary from the parameter
-        input_file >> specie_name;
+        //input_file >> specie_name;
         //We read the iquantum
         input_file >> iquantum;
         //We read the commentary from the parameter
-        input_file >> specie_name;
+        //input_file >> specie_name;
         //Now we read the name of the dust specie, and then we read the relevant file with the method read_opacities
         input_file >> specie_name;
+        std::cout << input_style << " " << iquantum << " " << specie_name << std::endl;
         read_opacities(i,input_style,specie_name);
+        //Then we read the separation line (only because the format of the input file)
+        //NOTE : We are not reading the specie name, but it's not necessary to make a new string
+        input_file >> specie_name;
     }
     input_file.close();
 }
@@ -130,13 +133,13 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
         //Then we read the absorption opacity
         input_file >> value;
         kappa_absorption[i] = value;
-        //If input style its 2, we add the kappa_scattering column and we read it's value
-        if(input_style == 2){
+        //If input style its 2, we add the kappa_scattering column and we read its value
+        if(iformat == 2 or iformat == 3){
             input_file >> value;
             kappa_scattering[i] = value;
         }
-        //If input style its 3, we add the kappa_scattering column and g column and we read it's value
-        if(input_style == 3){
+        //If input style its 3, we add the kappa_scattering column and g column and we read its value
+        if(iformat == 3){
             input_file >> value;
             g[i] = value;
         }
@@ -144,7 +147,7 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
     //We set each vector to the dust specie object
     this -> dust_species_information[specie_position].set_lambda(lambda);
     this -> dust_species_information[specie_position].set_kappa_absorption(kappa_absorption);
-    if(iformat == 2){
+    if(iformat == 2 or iformat == 3){
         this -> dust_species_information[specie_position].set_kappa_scattering(kappa_scattering);
     }
     if(iformat == 3){
@@ -159,19 +162,24 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
     //TODO : No quiero copiar el código original, porque raro, pero no sé cómo se llaman las técnicas de remapeo :c
 }
 
+//TODO : Este metodo es general ya que se usa en varias partes del codigo, evaluar si dejar en common
 std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda, int number_of_lambdas){
     //The vector that it going to store the calculated frequency points
     std::vector<double> frequency(number_of_lambdas);
     //The point that we are going to calculate
     double frequency_value;
     //The value 2.99792458E+14 comes from the value of speed of light in micrometers
-    double convert_factor = 2.99792458e14;
+    double light_speed_microns = common::get_light_speed_microns();
     for (int i = 0; i < number_of_lambdas; ++i) {
-        //In order to convert from micrometers to Hz, we need to do: Hz = 2.99792458E+14 / wavelenght in micrometers
-        frequency_value = convert_factor / lambda[i];
+        //In order to convert from micrometers to Hz, we need to do: Hz = light speed in micrometers / wavelenght in micrometers
+        frequency_value = light_speed_microns / lambda[i];
         frequency[i] = frequency_value;
     }
     return frequency;
+}
+
+std::vector<dust_species> dust::get_dust_species(){
+    return this -> dust_species_information;
 }
 
 dust::~dust(void){

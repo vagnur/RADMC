@@ -56,6 +56,21 @@ public:
     //Setter for the frequency points
     void set_frequency(std::vector<double> frequency);
 
+    //Getter for the densities
+    std::vector<std::vector<std::vector<double>>> get_densities();
+
+    //Getter for frequency
+    std::vector<double> get_frequency();
+
+    //Getter for absorption
+    std::vector<double> get_absoprtion();
+
+    //Getter for scattering
+    std::vector<double> get_scattering();
+
+    //Getter for mean scattering angle
+    std::vector<double> get_g();
+
     //Empty destructor
     ~dust_species(void);
 

@@ -2,15 +2,17 @@
 #define RADMC_COMMON_HH
 
 #include <vector>
+#include <iostream>
+#include <cmath>
 
 class common {
 
 private:
 
     //Light speed in cm / s^2
-    double light_speed = 2.9979245800000e10;
+    static constexpr double light_speed = 2.9979245800000e10;
     //Light speed in microns / s^2
-    double light_speed_microns = 2.99792458e14;
+    static constexpr double light_speed_microns = 2.99792458e14;
 
 public:
 
@@ -36,7 +38,8 @@ public:
     //Output : It returns a vector<double> with the values of the new function at each new point
     static std::vector<double> remap_function(int number_of_old_points, std::vector<double> old_points, std::vector<double> old_function, int number_of_new_points, std::vector<double> new_points, int elow, int eup);
 
-
+    //
+    static int hunt(std::vector<double> xx, int n, double x, int jlo);
 
 };
 

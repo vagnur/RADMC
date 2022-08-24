@@ -1,5 +1,9 @@
 #include <stars.hh>
 
+stars::stars(void){
+    ;
+}
+
 void stars::read_stars(void){
     //Read the input file for the stars information
     std::ifstream input_file;
@@ -14,7 +18,6 @@ void stars::read_stars(void){
     //First we read the format of the file.
     //TODO : Ahora mismo siempre se trabaja con el valor 2. El manual indica que si el valor es 1 entonces
     //TODO : los valores de la frecuencia serán valores directamente en hertz y no en micrones
-    //TODO : HAY QUE VERIFICAR SI ESTO AFECTA A NIVEL DE SIMULACION
     input_file >> iformat;
     this -> iformat = iformat;
     //Then we read the number of stars and the number of frequency points
@@ -34,7 +37,7 @@ void stars::read_stars(void){
         star str(star_radio,star_mass,x_position,y_position,z_position);
         this -> stars_information[i] = str;
         //TODO : ¿Es necesario borrar al estrella antes de generar la nueva?
-        //TODO : Creo que sería bueno borrar la memoria de la estrella en el destructor
+        //TODO : Creo que sería bueno borrar la memoria de la estrella en el destructor (estudiar y ver rendimiento)
     }
     //TODO : En el codigo original verifican varias cosas sobre la grilla y la estrella.
     //TODO : Esto implica que hay que leer la grilla antes
@@ -106,7 +109,8 @@ void stars::calculate_spectrum(std::vector<double> mean_intensity){
                 //TODO : Creo que esta es la formula, pero me quedan dudas
                 //Note that parsec^2/pi = 3.0308410e32 m^2, but we want it in cm^2 = 3.0308410e36
                 //TODO : Acorde a google parsec^2/PI = 3.0307577e32 (verificar con seba)
-                parsec_square_over_pi = 3.0307577e36;
+                //parsec_square_over_pi = 3.0307577e36;
+                parsec_square_over_pi = 3.0308410e36;
                 spectrum_surface = (parsec_square_over_pi * star_flux[j]) / std::pow(star_radio,2);
                 spectrum[j] = spectrum_surface;
             }
@@ -151,9 +155,26 @@ double stars::black_body_planck_funcion(double temperature,double frequency){
     //      v is the frequency in Hz
     //      c is the speed of light with value = 299792458 m / s^2, but we want it in cm / s^2 = 29979245800 cm / s^2
     //      K_b is the Boltzmann constant with value = 1.380649e−23 J⋅K^−1, but we want it in erg⋅K^-1 = 1.380649e-16 erg⋅K^-1
-    double h = 6.6260701e-27;
-    double c = 29979245800;
-    double K_b = 380649e-16;
+    //double h = 6.6260701e-27;
+    //double c = 29979245800;
+    //double K_b = 380649e-16;
+    /*
+    double h = 6.6262000e-27;
+    double c = 2.9979245800000e10;
+    double K_b = 1.3807e-16;
+    std::cout << (2*h*std::pow(frequency,3))/std::pow(c,2) << std::endl;
+    std::cout << (std::exp(h*frequency/K_b*temperature)-1) << std::endl;
     return ((2*h*std::pow(frequency,3))/std::pow(c,2))/(std::exp(h*frequency/K_b*temperature)-1);
-    //TODO : El codigo original usa otros valores para las constantes, evaluar con seba
+     */
+    double xx = 4.7989e-11 * frequency / temperature;
+    return 1.47455e-47 * std::pow(frequency,3) / (std::exp(xx)-1) + 1.e-290;
+    //TODO : Entiendo la funcion original, pero no entiendo el algoritmo copiado, ¿qué tiene que ver?
+}
+
+std::vector<star> stars::get_stars_information(void){
+    return this -> stars_information;
+}
+
+stars::~stars(void){
+    ;
 }

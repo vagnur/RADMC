@@ -22,7 +22,7 @@ private:
     int number_of_lambdas;
     //Number of stars present in the simulation
     int number_of_stars;
-    //Medata from the star. If 1 the list of wavelengths (see below) will instead be a list of frequencies in Herz. In 2 is a list in micron.
+    //Medata from the star. If 1m the list of wavelengths (see below) will instead be a list of frequencies in Herz. In 2 is a list in micron.
     int iformat;
     //Vector with the information of each star
     std::vector<star> stars_information;
@@ -52,6 +52,9 @@ public:
     //Input : vector mean_intesity -> Vector that contains the mean intensity (frequency dnu) in the system
     //Output : It has no output, but in the star_i it's going to store the calculated cumulative spectrum in a vector
     void calculate_cumulative_spectrum(std::vector<double> mean_intensity);
+
+    //Getter for the stars
+    std::vector<star> get_stars_information(void);
 
     //Empty destructor
 	~stars(void);

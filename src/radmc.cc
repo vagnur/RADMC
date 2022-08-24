@@ -2,14 +2,21 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include <frequencies.hh>
+#include <dust.hh>
+#include <common.hh>
+#include <stars.hh>
 
-std::map<std::string,float> read_main_file();
+std::map<std::string,double> read_main_file();
 std::vector<std::string> tokenize(std::string s, std::string del = " ");
+
+//TODO : Gabo del futuro, recuerda verificar el tema de los digitos significativos. Si bien los valores dan,
+//TODO : hay que ver cómo afecta el resultado final la presicion de los valores respecto al radmc original
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
     /*
-     * PROBANDO DIMENSIONES DEL VECTOR EN 3D
+     // PROBANDO DIMENSIONES DEL VECTOR EN 3D
     std::vector<std::vector<std::vector<int>>> prueba;// = {{{1,2},{3,4}},{{5,6},{7,8}}};
     prueba.resize(2,std::vector<std::vector<int>>(2,std::vector<int>(2,1)));
     for (int i = 0; i < 2; ++i) {
@@ -33,6 +40,75 @@ int main() {
         std::cout << std::endl;
     }
     */
+
+
+    /*
+     // PRUEBAS FRECUENCIA
+    frequencies fr;
+    fr.read_frequencies();
+    fr.calculate_mean_intensity();
+    //std::vector<double> prueba = fr.get_frequencies();
+    std::vector<double> prueba = fr.get_mean_intensity();
+    std::cout.precision(17);
+    for (int i = 0; i < prueba.size(); ++i) {
+        std::cout << prueba[i] << std::endl;
+    }
+    */
+
+    /*
+    //PRUEBAS DUST DENSITY
+    dust ds;
+    ds.read_dust_species_density(32,32,32);
+    std::vector<dust_species> species = ds.get_dust_species();
+    std::vector<std::vector<std::vector<double>>> densities = species[0].get_densities();
+    for (int i = 0; i < 32; ++i) {
+        for (int j = 0; j < 32; ++j) {
+            for (int k = 0; k < 32; ++k) {
+                std::cout << densities[i][j][k];
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+     */
+
+    //PRRUEBA DUST OTROS
+    /*
+    dust ds;
+    ds.read_dust_species_density(32,32,32);
+    ds.read_opacities_meta();
+    std::vector<dust_species> species = ds.get_dust_species();
+    std::vector<double> frequency = species[0].get_frequency();
+    std::vector<double> abs = species[0].get_absoprtion();
+    std::vector<double> scat = species[0].get_scattering();
+    std::vector<double> g = species[0].get_g();
+
+    frequencies fr;
+    fr.read_frequencies();
+    fr.calculate_mean_intensity();
+    std::vector<double> freq_nu = fr.get_mean_intensity();
+    std::vector<double> freq = fr.get_frequencies();
+
+    std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq.size(),freq,2,1);
+     */
+
+    /*
+    //PRUEBAS STARS
+    frequencies fr;
+    fr.read_frequencies();
+    fr.calculate_mean_intensity();
+    std::vector<double> freq_dnu = fr.get_mean_intensity();
+    std::vector<double> freq_nu = fr.get_frequencies();
+    stars st;
+    st.read_stars();
+    st.calculate_spectrum(freq_nu);
+    std::cout.precision(17);
+    std::vector<double> espectro = st.get_stars_information()[0].get_spectrum();
+    for (int i = 0; i < espectro.size(); ++i) {
+        std::cout << espectro[i] << std::endl;
+    }
+    */
+    return 0;
 }
 
 std::vector<std::string> tokenize(std::string s, std::string del){
@@ -53,9 +129,9 @@ std::vector<std::string> tokenize(std::string s, std::string del){
     return words;
 }
 
-std::map<std::string,float> read_main_file(){
+std::map<std::string,double> read_main_file(){
     //First we create a map with the default values
-    std::map<std::string,float> simulation_parameters;
+    std::map<std::string,double> simulation_parameters;
     //###PHOTONS###
     //Number of photons packages to be used in the Monte Carlo simulation
     simulation_parameters["nphot"] = 100000.0;

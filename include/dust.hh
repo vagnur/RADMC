@@ -7,6 +7,7 @@
 #include <string>
 #include <cmath>
 #include <dust_species.hh>
+#include <common.hh>
 
 /*
  * This class is going to work with the files "dust_density.inp", "dustopac.inp" and "dustkappa_*.inp".
@@ -59,7 +60,14 @@ public:
     //Output: It has no output, but we are going to store vectors with the relevant information in each dust_specie object.
     void read_opacities(int specie_position, int input_style, std::string specie_name);
 
+    //This method is going to convert the frequencies in the input to the corresponding lambda values
+    //Input : vector<double> frequncy -> Represent the frequency points that we want to convert
+    //        int number_of_frequecy -> Indicate the number of points that we want to convert
+    //Output : Its going to return a vector<double> with the lambda points
     std::vector<double> convert_lambda_to_frequency(std::vector<double> frequency,int number_of_frequency);
+
+    //Getter for the dust species
+    std::vector<dust_species> get_dust_species();
 
     //Empty destructor
     ~dust(void);
