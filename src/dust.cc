@@ -77,7 +77,6 @@ void dust::read_opacities_meta(void){
     input_file >> iformat;
     //We read the number of species from the file
     input_file >> number_of_species;
-    std::cout << iformat << " " << number_of_species << std::endl;
     for (int i = 0; i < number_of_species; ++i) {
         //TODO : El archivo de entrada puede tener comentarios y elementos raros, hay que ver como generalizar
         //TODO : el método para que funcione con archivos con comentarios y sin comentarios
@@ -91,7 +90,6 @@ void dust::read_opacities_meta(void){
         //input_file >> specie_name;
         //Now we read the name of the dust specie, and then we read the relevant file with the method read_opacities
         input_file >> specie_name;
-        std::cout << input_style << " " << iquantum << " " << specie_name << std::endl;
         read_opacities(i,input_style,specie_name);
         //Then we read the separation line (only because the format of the input file)
         //NOTE : We are not reading the specie name, but it's not necessary to make a new string
@@ -169,17 +167,21 @@ std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda
     //The point that we are going to calculate
     double frequency_value;
     //The value 2.99792458E+14 comes from the value of speed of light in micrometers
-    double light_speed_microns = common::get_light_speed_microns();
+    //double light_speed_microns = common::get_light_speed_microns();
     for (int i = 0; i < number_of_lambdas; ++i) {
         //In order to convert from micrometers to Hz, we need to do: Hz = light speed in micrometers / wavelenght in micrometers
-        frequency_value = light_speed_microns / lambda[i];
+        frequency_value = 2.9979e14 / lambda[i];
         frequency[i] = frequency_value;
     }
     return frequency;
 }
 
-std::vector<dust_species> dust::get_dust_species(){
+std::vector<dust_species> dust::get_dust_species(void){
     return this -> dust_species_information;
+}
+
+int dust::get_number_of_dust_species(void){
+    return this -> number_of_species;
 }
 
 dust::~dust(void){

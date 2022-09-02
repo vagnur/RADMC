@@ -6,6 +6,7 @@
 #include <dust.hh>
 #include <common.hh>
 #include <stars.hh>
+#include <emissivity.hh>
 
 std::map<std::string,double> read_main_file();
 std::vector<std::string> tokenize(std::string s, std::string del = " ");
@@ -14,7 +15,80 @@ std::vector<std::string> tokenize(std::string s, std::string del = " ");
 //TODO : hay que ver cómo afecta el resultado final la presicion de los valores respecto al radmc original
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    std::cout << "INICIANDO PRUEBAS" << std::endl;
+
+    /*
+    //Probando emissitivy
+    std::cout.precision(17);
+
+    std::map<std::string,double> simulation_parameters = read_main_file();
+
+    frequencies fr;
+    fr.read_frequencies();
+    fr.calculate_mean_intensity();
+    //freq_dnu y freq_nu correctos (exactamente igual)
+    std::vector<double> freq_dnu = fr.get_mean_intensity();
+    std::vector<double> freq_nu = fr.get_frequencies();
+    int number_of_frequencies = fr.get_number_frequency_points();
+
+    dust ds;
+    ds.read_dust_species_density(32,32,32);
+    ds.read_opacities_meta();
+    std::vector<dust_species> species = ds.get_dust_species();
+    std::vector<double> lambda = species[0].get_lambda();
+    std::vector<double> frequency = species[0].get_frequency();
+    std::vector<double> abs = species[0].get_absoprtion();
+    std::vector<double> scat = species[0].get_scattering();
+    std::vector<double> g = species[0].get_g();
+    int number_of_dust_species = ds.get_number_of_dust_species();
+
+    //Testeados, exactamente igual (de paso quiere decir que los vectores iniciales estan bien tambien :D )
+    std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq_nu.size(),freq_nu,2,1);
+
+    //for (int i = 0; i < abs_remap.size(); ++i) {
+    //    std::cout << abs_remap[i] << std::endl;
+    //}
+    //exit(0);
+
+    std::vector<double> scat_remap = common::remap_function(scat.size(),frequency,scat,freq_nu.size(),freq_nu,2,1);
+    std::vector<double> g_remap = common::remap_function(g.size(),frequency,g,freq_nu.size(),freq_nu,1,1);
+
+    //void emissivity::generate_emissitivy_table(std::map<std::string,double> simulation_parameters,int number_of_species, int number_of_frequencies, std::vector<double> kappa_absorption, std::vector<double> freq_nu, std::vector<double> freq_dnu){
+    emissivity emis;
+    emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_remap,freq_nu,freq_dnu);
+    */
+
+    //PROBANDO INTERPOLATION
+    frequencies fr;
+    fr.read_frequencies();
+    fr.calculate_mean_intensity();
+    //freq_dnu y freq_nu correctos (exactamente igual)
+    std::vector<double> freq_dnu = fr.get_mean_intensity();
+    std::vector<double> freq_nu = fr.get_frequencies();
+    int number_of_frequencies = fr.get_number_frequency_points();
+
+    std::cout.precision(17);
+
+    dust ds;
+    ds.read_dust_species_density(32,32,32);
+    ds.read_opacities_meta();
+    std::vector<dust_species> species = ds.get_dust_species();
+    std::vector<double> lambda = species[0].get_lambda();
+    std::vector<double> frequency = species[0].get_frequency();
+    std::vector<double> abs = species[0].get_absoprtion();
+    std::vector<double> scat = species[0].get_scattering();
+    std::vector<double> g = species[0].get_g();
+    int number_of_dust_species = ds.get_number_of_dust_species();
+
+    std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq_nu.size(),freq_nu,2,1);
+    std::vector<double> scat_interpol = common::interpolation_function(abs,frequency,abs.size(),freq_nu,number_of_frequencies,abs_remap);
+
+    std::cout.precision(17);
+    for (unsigned int i = 0; i < scat_interpol.size(); ++i) {
+        std::cout << scat_interpol[i] << std::endl;
+    }
+    exit(0);
+
     /*
      // PROBANDO DIMENSIONES DEL VECTOR EN 3D
     std::vector<std::vector<std::vector<int>>> prueba;// = {{{1,2},{3,4}},{{5,6},{7,8}}};

@@ -38,8 +38,12 @@ public:
     //Output : It returns a vector<double> with the values of the new function at each new point
     static std::vector<double> remap_function(int number_of_old_points, std::vector<double> old_points, std::vector<double> old_function, int number_of_new_points, std::vector<double> new_points, int elow, int eup);
 
+    static std::vector<double> interpolation_function(std::vector<double> old_function, std::vector<double> old_points, int number_of_old_points, std::vector<double> new_points, int number_of_new_points, std::vector<double> remmaped);
+
     //
     static int hunt(std::vector<double> xx, int n, double x, int jlo);
+
+    static double black_body_planck_funcion(double temperature,double frequency);
 
 };
 

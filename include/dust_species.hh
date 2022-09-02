@@ -71,6 +71,8 @@ public:
     //Getter for mean scattering angle
     std::vector<double> get_g();
 
+    std::vector<double> get_lambda();
+
     //Empty destructor
     ~dust_species(void);
 

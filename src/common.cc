@@ -34,13 +34,14 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
     if(new_points[1] >= new_points[0]){
         new_step = 1;
         new_start = 0;
-        new_end = number_of_new_points - 1;
+        //new_end = number_of_new_points - 1;
+        new_end = number_of_new_points;
     }
         //Descending case for new points
     else{
         new_step = -1;
         new_start = number_of_new_points - 1;
-        new_end = 0;
+        new_end = -1;
     }
 
     //Now we iterate over the new values, from the lower to the highest value
@@ -142,28 +143,117 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
         else{
             //In any other case, we are in the domain of the old points
             x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points/2);
-            std::cout << "JLO: " << x << std::endl;
             if(new_points[i] == old_points[0]){
+                //std::cout << "A" << std::endl;
                 new_function[i] = old_function[0];
             }
             else if(new_points[i] == old_points[number_of_old_points - 1]){
+                //std::cout << "B" << std::endl;
                 new_function[i] = old_function[number_of_old_points - 1];
             }
             else{
-                if((x < 0) || (x > number_of_old_points - 1)){
+                if((x < 0) || (x >= number_of_old_points - 1)){
                     std::cerr << "Error in remaping function" << std::endl;
+                    std::cerr << "Hunt function out of range" << std::endl;
                     exit(0);
                 }
                 y = (new_points[i] - old_points[x]) / (old_points[x+1] - old_points[x]);
                 if((old_function[x] > 0) && (old_function[x+1] > 0)){
-                    new_function[i] = std::exp((1.0 - y)*std::log(old_function[i])+y*std::log(old_function[i+1]));
+                    //std::cout << "C" << std::endl;
+                    new_function[i] = std::exp((1.0 - y)*std::log(old_function[x])+y*std::log(old_function[x+1]));
                 }
                 else{
-                    new_function[i] = (1-y)*old_function[x]+y*old_function[x+1];
+                    //std::cout << "D" << std::endl;
+                    new_function[i] = ((1-y)*old_function[x])+(y*old_function[x+1]);
                 }
             }
         }
         i = i + new_step;
+    }
+    return new_function;
+}
+
+std::vector<double> common::interpolation_function(std::vector<double> old_function, std::vector<double> old_points, int number_of_old_points, std::vector<double> new_points, int number_of_new_points, std::vector<double> remmaped){
+    //double find_dust_kappa_interpol = 0.0;
+    std::vector<double> new_function(number_of_new_points);
+    double specie_last_frequency = old_points.back();
+    double specie_first_frequency = old_points[0];
+    double x,eps;
+    int inumax, inumin,inu;
+    double margin = 1e-4;
+    for (int i = 0; i < number_of_new_points; ++i) {
+        if(((new_points[i] - specie_last_frequency)*(new_points[i] - specie_first_frequency)) < 0.0){
+            // Yes, the freq lies within the boundaries.
+            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points/2);
+            if(x < 0 || x >= number_of_old_points - 1){
+                std::cerr << "Error in interpolation function" << std::endl;
+                std::cerr << "Hunt function out of range" << std::endl;
+                exit(0);
+            }
+            eps = (new_points[i] - old_points[x]) / (old_points[x+1] - old_points[x]);
+            if(eps < 0.0 || eps > 1.0){
+                std::cerr << "Error in interpolation function at eps calculation" << std::endl;
+                exit(0);
+            }
+            new_function[i] = ((1.0 - eps) * old_function[x]) + eps * old_function[x+1];
+        }
+        else{
+            //The freq is out of range of the original grid
+            if(new_points[2] > new_points[1]){
+                inumax = number_of_new_points-1;
+                inumin = 0;
+            }
+            else{
+                inumax = 0;
+                inumin = number_of_new_points-1;
+            }
+            /*
+            std::cout.precision(17);
+            std::cout << inumax << std::endl;
+            std::cout << inumin << std::endl;
+            std::cout << new_points[i] << std::endl;
+            std::cout << old_points[inumin] << std::endl;
+            std::cout << old_points[inumax] << std::endl;
+            exit(0);
+             */
+            if(new_points[i] <= new_points[inumin]){
+                if(new_points[i] <= (1.0-margin)*new_points[inumin]){
+                    std::cerr << "Error in interpolation function" << std::endl;
+                    std::cerr << "Frequency out of range ..." << std::endl;
+                    exit(0);
+                }
+                else{
+                    eps = (new_points[i]-((1.0 - margin)*new_points[inumin])) / (margin*new_points[inumin]);
+                    inu = inumin;
+                }
+            }
+            if(new_points[i] >= new_points[inumax]){
+                if(new_points[i] >= (1.0+margin)*new_points[inumax]){
+                    std::cerr << "Error in interpolation function" << std::endl;
+                    std::cerr << "Frequency out of range ..." << std::endl;
+                    exit(0);
+                }
+                else{
+                    eps = ((1.0 + margin)*new_points[inumax] - new_points[i]) / (margin*new_points[inumax]);
+                    inu = inumax;
+                }
+            }
+            if(inu >= 0){
+                if(eps < 0.0) eps = 0.0;
+                if(eps > 1.0) eps = 1.0;
+                new_function[i] = eps * remmaped[inu];
+            }
+            else{
+                x = hunt(new_points,number_of_new_points,new_points[i],inu);
+                std::cout << x << std::endl;
+                if(x < 0 || x > number_of_new_points - 1){
+                    std::cerr << "Error in interpolation function" << std::endl;
+                    std::cerr << "Hunt function out of range 2" << std::endl;
+                    exit(0);
+                }
+                new_function[i] = (1.0 - eps) * remmaped[x] + eps * remmaped[x+1];
+            }
+        }
     }
     return new_function;
 }
@@ -233,4 +323,33 @@ int common::hunt(std::vector<double> xx, int n, double x, int jlo){
     }
 
     return jlo;
+}
+
+double common::black_body_planck_funcion(double temperature,double frequency){
+    //This function calculates the Blackbody thermal radiation with the planck function
+    //The planck function is definided as:
+    //B_v(T) = [2 * h * v^3 / c^2] / [e^(h*v/K_b*T)-1]
+    //Where h is the planck constant with value = 6.62607015e−34 J⋅Hz^−1, but we want it in erg⋅Hz^-1 = 6.6260701e-27 erg⋅Hz^-1
+    //      v is the frequency in Hz
+    //      c is the speed of light with value = 299792458 m / s^2, but we want it in cm / s^2 = 29979245800 cm / s^2
+    //      K_b is the Boltzmann constant with value = 1.380649e−23 J⋅K^−1, but we want it in erg⋅K^-1 = 1.380649e-16 erg⋅K^-1
+    //double h = 6.6260701e-27;
+    //double c = 29979245800;
+    //double K_b = 380649e-16;
+    /*
+    double h = 6.6262000e-27;
+    double c = 2.9979245800000e10;
+    double K_b = 1.3807e-16;
+    std::cout << (2*h*std::pow(frequency,3))/std::pow(c,2) << std::endl;
+    std::cout << (std::exp(h*frequency/K_b*temperature)-1) << std::endl;
+    return ((2*h*std::pow(frequency,3))/std::pow(c,2))/(std::exp(h*frequency/K_b*temperature)-1);
+     */
+    double xx = 4.7989e-11 * frequency / temperature;
+    if (xx > 709.78271) {
+        return 0;
+    }
+    else{
+        return 1.47455e-47 * std::pow(frequency,3) / (std::exp(xx)-1) + 1.e-290;
+    }
+    //TODO : Entiendo la funcion original, pero no entiendo el algoritmo copiado, ¿qué tiene que ver?
 }

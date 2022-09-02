@@ -48,6 +48,10 @@ std::vector<double> dust_species::get_g(){
     return this -> g;
 }
 
+std::vector<double> dust_species::get_lambda(){
+    return this -> lambda;
+}
+
 dust_species::~dust_species(void){
     ;
 }

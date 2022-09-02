@@ -67,7 +67,9 @@ public:
     std::vector<double> convert_lambda_to_frequency(std::vector<double> frequency,int number_of_frequency);
 
     //Getter for the dust species
-    std::vector<dust_species> get_dust_species();
+    std::vector<dust_species> get_dust_species(void);
+
+    int get_number_of_dust_species(void);
 
     //Empty destructor
     ~dust(void);
