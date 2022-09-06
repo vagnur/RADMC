@@ -58,7 +58,9 @@ int main() {
     emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_remap,freq_nu,freq_dnu);
     */
 
-    //PROBANDO INTERPOLATION
+    //PROBANDO INTERPOLATION Y EMISIVIDAD
+    std::map<std::string,double> simulation_parameters = read_main_file();
+
     frequencies fr;
     fr.read_frequencies();
     fr.calculate_mean_intensity();
@@ -81,13 +83,10 @@ int main() {
     int number_of_dust_species = ds.get_number_of_dust_species();
 
     std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq_nu.size(),freq_nu,2,1);
-    std::vector<double> scat_interpol = common::interpolation_function(abs,frequency,abs.size(),freq_nu,number_of_frequencies,abs_remap);
+    std::vector<double> abs_interpol = common::interpolation_function(abs,frequency,abs.size(),freq_nu,number_of_frequencies,abs_remap);
 
-    std::cout.precision(17);
-    for (unsigned int i = 0; i < scat_interpol.size(); ++i) {
-        std::cout << scat_interpol[i] << std::endl;
-    }
-    exit(0);
+    emissivity emis;
+    emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
 
     /*
      // PROBANDO DIMENSIONES DEL VECTOR EN 3D

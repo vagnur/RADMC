@@ -25,7 +25,7 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
     double demis;
     std::vector<double> fnu_diff;
     std::vector<std::vector<double>> db_enertemp(number_of_species, std::vector<double> (ntemp, 0));
-    std::vector<std::vector<double>> db_emiss(number_of_species, std::vector<double> (ntemp,0));
+    std::vector<std::vector<std::vector<double>>> db_emiss(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
     std::vector<std::vector<double>> db_logenertemp(number_of_species, std::vector<double> (ntemp,0));
     //We iterate over each dust specie
     for (int i = 0; i < number_of_species; ++i) {
@@ -37,13 +37,8 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
             fnu_diff.pop_back();
             db_enertemp[i][j] = demis;
             db_logenertemp[i][j] = std::log(demis);
-            db_emiss[i] = fnu_diff;
+            db_emiss[i][j] = fnu_diff;
         }
-        std::cout.precision(17);
-        for (unsigned int j = 0; j < db_enertemp[i].size(); ++j) {
-            std::cout << db_enertemp[i][j] << std::endl;
-        }
-        exit(0);
     }
 }
 
@@ -54,13 +49,8 @@ std::vector<double> emissivity::absoprtion_event(double temp, int number_of_freq
     for (int i = 0; i < number_of_frequencies; ++i) {
         fnu_diff[i] = cell_alpha[i] * common::black_body_planck_funcion(temp,freq_nu[i]);
         demis = demis + (fnu_diff[i] * freq_dnu[i]);
-        std::cout << "cell_alpha[i] " << cell_alpha[i] << std::endl;
-        std::cout << "black_body_planck_funcion(temp,freq_nu[i]) " <<common::black_body_planck_funcion(temp,freq_nu[i]) << std::endl;
-        std::cout << "demis " << demis << std::endl;
     }
     demis = demis * fourpi;
-    std::cout << "demis final " << demis << std::endl;
-    exit(0);
     fnu_diff[number_of_frequencies] = demis;
     return fnu_diff;
 }

@@ -1,3 +1,0 @@
-/home/marcela/CLionProjects/RADMC/cmake-build-debug/CMakeFiles/RADMC.dir
-/home/marcela/CLionProjects/RADMC/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/marcela/CLionProjects/RADMC/cmake-build-debug/CMakeFiles/rebuild_cache.dir
