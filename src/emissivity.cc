@@ -24,9 +24,12 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
 
     double demis;
     std::vector<double> fnu_diff;
-    std::vector<std::vector<double>> db_enertemp(number_of_species, std::vector<double> (ntemp, 0));
-    std::vector<std::vector<std::vector<double>>> db_emiss(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
-    std::vector<std::vector<double>> db_logenertemp(number_of_species, std::vector<double> (ntemp,0));
+    //std::vector<std::vector<double>> db_enertemp(number_of_species, std::vector<double> (ntemp, 0));
+    this -> db_enertemp.resize(number_of_species, std::vector<double> (ntemp, 0));
+    //std::vector<std::vector<double>> db_logenertemp(number_of_species, std::vector<double> (ntemp,0));
+    this -> db_logenertemp.resize(number_of_species, std::vector<double> (ntemp,0));
+    //std::vector<std::vector<std::vector<double>>> db_emiss(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
+    this -> db_emiss.resize(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
     //We iterate over each dust specie
     for (int i = 0; i < number_of_species; ++i) {
         //And over each temperature
@@ -38,6 +41,39 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
             db_enertemp[i][j] = demis;
             db_logenertemp[i][j] = std::log(demis);
             db_emiss[i][j] = fnu_diff;
+        }
+    }
+}
+
+void emissivity::compute_derivate(int number_of_species, int number_of_temperatures, int number_of_frequencies, std::vector<double> freq_dnu) {
+    std::cout << number_of_frequencies << std::endl;
+    std::vector<double> diffemis(number_of_frequencies);
+    std::vector<double> db_cumul(number_of_frequencies + 1);
+    std::vector<std::vector<std::vector<double>>> db_cumulnorm(number_of_species,std::vector<std::vector<double>>(number_of_temperatures,std::vector<double>(number_of_frequencies+1,0)));
+    for (int i = 0; i < number_of_species; ++i) {
+        diffemis = this -> db_emiss[i][0];
+        db_cumul[0] = 0.0;
+        for (int j = 1; j < number_of_frequencies + 1; ++j) {
+            db_cumul[j] = db_cumul[j-1]  + diffemis[j] * freq_dnu[j];
+        }
+        for (int j = 0; j < number_of_frequencies + 1; ++j) {
+            db_cumulnorm[i][0][j] = db_cumul[j] / db_cumul[number_of_frequencies];
+        }
+        for (int j = 1; j < number_of_temperatures; ++j) {
+            for (int k = 0; k < number_of_frequencies + 1; ++k) {
+                diffemis[k] = this -> db_emiss[i][j][k] - this -> db_emiss[i][j-1][k];
+                if(k == 0){
+                    db_cumul[0] = 0.0;
+                }
+                else{
+                    db_cumul[k] = db_cumul[k-1] + diffemis[k-1] * freq_dnu[k-1];
+                }
+            }
+            for (int k = 0; k < number_of_frequencies + 1; ++k) {
+                db_cumulnorm[i][j][k] = db_cumul[k] /db_cumul[number_of_frequencies];
+                std::cout << db_cumulnorm[i][j][k] << std::endl;
+            }
+            exit(0);
         }
     }
 }

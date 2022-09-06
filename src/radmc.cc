@@ -87,6 +87,7 @@ int main() {
 
     emissivity emis;
     emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
+    emis.compute_derivate(number_of_dust_species,simulation_parameters["ntemp"],number_of_frequencies,freq_dnu);
 
     /*
      // PROBANDO DIMENSIONES DEL VECTOR EN 3D
