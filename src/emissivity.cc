@@ -24,20 +24,22 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
 
     double demis;
     std::vector<double> fnu_diff;
-    //std::vector<std::vector<double>> db_enertemp(number_of_species, std::vector<double> (ntemp, 0));
+    //This vector its going to store the precaculated temperatures
     this -> db_enertemp.resize(number_of_species, std::vector<double> (ntemp, 0));
-    //std::vector<std::vector<double>> db_logenertemp(number_of_species, std::vector<double> (ntemp,0));
+    //This vector its going to store the logaritmic temperature
     this -> db_logenertemp.resize(number_of_species, std::vector<double> (ntemp,0));
-    //std::vector<std::vector<std::vector<double>>> db_emiss(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
+    //This vector its going to store the emissivity of each specie at each temperature
     this -> db_emiss.resize(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
     //We iterate over each dust specie
     for (int i = 0; i < number_of_species; ++i) {
         //And over each temperature
         for (int j = 0; j < ntemp; ++j) {
-            //cell_alpha = kappa_absorption
+            //TODO : Preguntar por el evento de absorcion
             fnu_diff = absoprtion_event(db_temp[j],number_of_frequencies, kappa_absorption, freq_nu, freq_dnu);
+            //We stored the last value in the fnu_diff vector, so now we get it
             demis = fnu_diff.back();
             fnu_diff.pop_back();
+            //We store the relevant values in each vector
             db_enertemp[i][j] = demis;
             db_logenertemp[i][j] = std::log(demis);
             db_emiss[i][j] = fnu_diff;
@@ -45,35 +47,52 @@ void emissivity::generate_emissitivy_table(std::map<std::string,double> simulati
     }
 }
 
+//TODO : Verificar vectores que se usan en la simulacion de los calculados para almacenar en el objeto de la clase
 void emissivity::compute_derivate(int number_of_species, int number_of_temperatures, int number_of_frequencies, std::vector<double> freq_dnu) {
-    std::cout << number_of_frequencies << std::endl;
+    //This vector its going to represent the emisitivity of each specie at each temperature
     std::vector<double> diffemis(number_of_frequencies);
+    //This vector its going to store the cumulative value of the calculated derivative
     std::vector<double> db_cumul(number_of_frequencies + 1);
+    //In this cube, we are going to store the normal cumulative value of the derivative for each specie at each temperature
     std::vector<std::vector<std::vector<double>>> db_cumulnorm(number_of_species,std::vector<std::vector<double>>(number_of_temperatures,std::vector<double>(number_of_frequencies+1,0)));
+    //This vector its going to store the cumulative normal value for a specific specie at a specific temperature
+    std::vector<double> db_cumulnorm_values(number_of_frequencies+1);
+    //We iterate over each specie
     for (int i = 0; i < number_of_species; ++i) {
+        //For the first temeprature, we simply the emissivity function itself
         diffemis = this -> db_emiss[i][0];
+        //Now we accumulate over each frequency
         db_cumul[0] = 0.0;
         for (int j = 1; j < number_of_frequencies + 1; ++j) {
             db_cumul[j] = db_cumul[j-1]  + diffemis[j] * freq_dnu[j];
         }
+        //Now we obtain the normal value of the calculated accumulation
         for (int j = 0; j < number_of_frequencies + 1; ++j) {
-            db_cumulnorm[i][0][j] = db_cumul[j] / db_cumul[number_of_frequencies];
+            db_cumulnorm_values[j] = db_cumul[j] / db_cumul[number_of_frequencies];
+            //db_cumulnorm[i][0][j] = db_cumul[j] / db_cumul[number_of_frequencies];
         }
+        //We store the normal cumulative value
+        db_cumulnorm[i][0] = db_cumulnorm_values;
+        //For the rest of the temperatures, we take the difference
         for (int j = 1; j < number_of_temperatures; ++j) {
             for (int k = 0; k < number_of_frequencies + 1; ++k) {
+                //We take the diference of the emissivity of specie i, at temperature j, at frequency k
                 diffemis[k] = this -> db_emiss[i][j][k] - this -> db_emiss[i][j-1][k];
+                //For the fist frequency we store 0
                 if(k == 0){
                     db_cumul[0] = 0.0;
                 }
+                //For any other, we accumulate with the last calculated value
                 else{
                     db_cumul[k] = db_cumul[k-1] + diffemis[k-1] * freq_dnu[k-1];
                 }
             }
+            //Now we obtain the normal value of the calculated accumulation
             for (int k = 0; k < number_of_frequencies + 1; ++k) {
-                db_cumulnorm[i][j][k] = db_cumul[k] /db_cumul[number_of_frequencies];
-                std::cout << db_cumulnorm[i][j][k] << std::endl;
+                db_cumulnorm_values[k] = db_cumul[k] /db_cumul[number_of_frequencies];
             }
-            exit(0);
+            //We store the normal cumulative value
+            db_cumulnorm[i][j] = db_cumulnorm_values;
         }
     }
 }
