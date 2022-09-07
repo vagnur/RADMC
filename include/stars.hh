@@ -9,6 +9,7 @@
 #include <cmath>
 //In order to make a vector to store the information of each star
 #include <star.hh>
+#include <common.hh>
 
 /*
  * An object of this class is going to store the information of each star present in the simulation
@@ -19,7 +20,7 @@ class stars{
 private:
 
     //Number of frequency points present in each star
-    int number_of_lambdas;
+    int number_of_frequencies;
     //Number of stars present in the simulation
     int number_of_stars;
     //Medata from the star. If 1m the list of wavelengths (see below) will instead be a list of frequencies in Herz. In 2 is a list in micron.
@@ -42,16 +43,12 @@ public:
     //Output : It has no output, but in the star_i it's going to store the calculated spectrum in a vector
     void calculate_spectrum(std::vector<double> mean_intensity);
 
-    //Method that is going to calculate the blackbody radiation from the star
-    //Input : double temperature -> It's the temperature that we are going to use in the formula
-    //        double frequency -> Frequency for the planck function
-    //Output : double value that represent the radiation at frequency_i and the assigned temperature
-    double black_body_planck_funcion(double temperature,double frequency);
-
     //In order to do the simulations, we need the cumulative spectrum of each star
     //Input : vector mean_intesity -> Vector that contains the mean intensity (frequency dnu) in the system
     //Output : It has no output, but in the star_i it's going to store the calculated cumulative spectrum in a vector
     void calculate_cumulative_spectrum(std::vector<double> mean_intensity);
+
+    void calculate_total_luminosities(std::vector<double> freq_dnu);
 
     //Getter for the stars
     std::vector<star> get_stars_information(void);

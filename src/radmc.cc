@@ -58,6 +58,7 @@ int main() {
     emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_remap,freq_nu,freq_dnu);
     */
 
+    /*
     //PROBANDO INTERPOLATION Y EMISIVIDAD
     std::map<std::string,double> simulation_parameters = read_main_file();
 
@@ -88,6 +89,7 @@ int main() {
     emissivity emis;
     emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
     emis.compute_derivate(number_of_dust_species,simulation_parameters["ntemp"],number_of_frequencies,freq_dnu);
+    */
 
     /*
      // PROBANDO DIMENSIONES DEL VECTOR EN 3D
@@ -166,7 +168,6 @@ int main() {
     std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq.size(),freq,2,1);
      */
 
-    /*
     //PRUEBAS STARS
     frequencies fr;
     fr.read_frequencies();
@@ -176,12 +177,7 @@ int main() {
     stars st;
     st.read_stars();
     st.calculate_spectrum(freq_nu);
-    std::cout.precision(17);
-    std::vector<double> espectro = st.get_stars_information()[0].get_spectrum();
-    for (int i = 0; i < espectro.size(); ++i) {
-        std::cout << espectro[i] << std::endl;
-    }
-    */
+    st.calculate_total_luminosities(freq_dnu);
     return 0;
 }
 

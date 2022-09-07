@@ -35,6 +35,15 @@ std::vector<double> star::get_spectrum(){
 double star::get_star_radio(){
     return this -> radio;
 }
+
+double star::get_luminosity(void){
+    return this -> luminosity;
+}
+
+void star::set_luminosity(double luminosity){
+    this -> luminosity = luminosity;
+}
+
 star::~star(void){
     ;
 }

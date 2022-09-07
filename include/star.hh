@@ -15,6 +15,8 @@ private:
     double radio;
     //Mass of the star
     double mass;
+    //Luminosity of the star
+    double luminosity;
     //Position of the star at the x,y and z component
     std::vector<double> positions;
     //Flux of the star
@@ -49,6 +51,10 @@ public:
 
     //Getter of the spectrum
     std::vector<double> get_spectrum();
+
+    double get_luminosity(void);
+
+    void set_luminosity(double luminosity);
 
     //Empty destructor
     ~star(void);

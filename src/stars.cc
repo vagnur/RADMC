@@ -13,7 +13,7 @@ void stars::read_stars(void){
         std::cerr << "Mandatory file \"stars.inp\" could not be opened. Make sure that the file exists" << std::endl;
         exit(0);
     }
-    int number_of_stars,iformat,number_of_lambdas;
+    int number_of_stars,iformat,number_of_frequencies;
     double star_radio,star_mass,x_position,y_position,z_position,lambda_point;
     //First we read the format of the file.
     //TODO : Ahora mismo siempre se trabaja con el valor 2. El manual indica que si el valor es 1 entonces
@@ -25,8 +25,8 @@ void stars::read_stars(void){
     this -> number_of_stars = number_of_stars;
     //We resize the vector that is going to alocate each star
     this -> stars_information.resize(number_of_stars);
-    input_file >> number_of_lambdas;
-    this -> number_of_lambdas = number_of_lambdas;
+    input_file >> number_of_frequencies;
+    this -> number_of_frequencies = number_of_frequencies;
     //Now we create a new star object with the information relevant to that star
     for (int i = 0; i < number_of_stars; ++i) {
         input_file >> star_radio;
@@ -45,7 +45,7 @@ void stars::read_stars(void){
     //TODO : estas frecuencias son las mismas que ya se leyeron xd
     //TODO : el programa original compara si son las mismas o no y se detiene si no lo son
     //TODO : evaluar si es necesario, a priori se considera que no y no se trabaja con los valores
-    for (int i = 0; i < number_of_lambdas; ++i) {
+    for (int i = 0; i < number_of_frequencies; ++i) {
         input_file >> lambda_point;
     }
     //We read the flux of each star
@@ -61,9 +61,9 @@ void stars::read_stars(void){
         }
         //If not, then we read the full spectrum
         else {
-            star_flux.resize(number_of_lambdas);
+            star_flux.resize(number_of_frequencies);
             star_flux[0] = star_flux_value;
-            for (int j = 1; j < number_of_lambdas; ++j) {
+            for (int j = 1; j < number_of_frequencies; ++j) {
                 input_file >> star_flux_value;
                 star_flux[j] = star_flux_value;
             }
@@ -85,14 +85,14 @@ void stars::calculate_spectrum(std::vector<double> mean_intensity){
     //For each star...
     for (int i = 0; i < this -> number_of_stars; ++i) {
         //First we make space in the vector
-        spectrum.resize(this -> number_of_lambdas);
+        spectrum.resize(this -> number_of_frequencies);
         //We get the flux of the star
         star_flux = this -> stars_information[i].get_flux();
         //If the first value{ of the flux is negative, then blackbody is taken with a temperature equal to the absolute value of the flux
         if(star_flux[0] < 0){
             //Then we calculate the blackbody spectrum for each intensity
-            for (int j = 0; j < this -> number_of_lambdas; ++j) {
-                black_body_spectrum = this -> black_body_planck_funcion(std::abs(star_flux[0]),mean_intensity[j]);
+            for (int j = 0; j < this -> number_of_frequencies; ++j) {
+                black_body_spectrum = common::black_body_planck_funcion(std::abs(star_flux[0]),mean_intensity[j]);
                 spectrum[j] = black_body_spectrum;
             }
             //Then we assing the calculated spectrum to the star
@@ -102,7 +102,7 @@ void stars::calculate_spectrum(std::vector<double> mean_intensity){
         else{
             //We obtain the radio of the star
             star_radio = this -> stars_information[i].get_star_radio();
-            for (int j = 0; j < this -> number_of_lambdas; ++j) {
+            for (int j = 0; j < this -> number_of_frequencies; ++j) {
                 //Note that the spectrum is given in the usual flux-at-one-parsec format, so we have to translate this here to intensity at stellar surface
                 //For this we are going to use:
                 //F_v(r) = L_v / 4*PI*r^2; with L_v = 4*PI*R^2*PI*B_v(T_*)
@@ -126,17 +126,17 @@ void stars::calculate_cumulative_spectrum(std::vector<double> mean_intensity){
     //This vector is the spectrum of each star
     std::vector<double> star_spectrum;
     //In this vector we are going to save the acumulated spectrum of each star
-    std::vector<double> cumulative_spectrum(this->number_of_lambdas);
+    std::vector<double> cumulative_spectrum(this->number_of_frequencies);
     double star_cumulative;
     //For each star...
     for (int i = 0; i < this -> number_of_stars; ++i) {
         star_cumulative = 0;
         //We make space in the vector to store the calculated cumulative spectrums
-        cumulative_spectrum.resize(this -> number_of_lambdas);
+        cumulative_spectrum.resize(this -> number_of_frequencies);
         //We obtain the calculated spectrum of each star
         star_spectrum = stars_information[i].get_spectrum();
         //Then for each spectrum, we calculate the cumulative spectrum until point i
-        for (int j = 0; j < this -> number_of_lambdas; ++j) {
+        for (int j = 0; j < this -> number_of_frequencies; ++j) {
             star_cumulative = star_cumulative + star_spectrum[j] * mean_intensity[j];
             cumulative_spectrum[i] = star_cumulative;
         }
@@ -147,28 +147,37 @@ void stars::calculate_cumulative_spectrum(std::vector<double> mean_intensity){
     }
 }
 
-double stars::black_body_planck_funcion(double temperature,double frequency){
-    //This function calculates the Blackbody thermal radiation with the planck function
-    //The planck function is definided as:
-    //B_v(T) = [2 * h * v^3 / c^2] / [e^(h*v/K_b*T)-1]
-    //Where h is the planck constant with value = 6.62607015e−34 J⋅Hz^−1, but we want it in erg⋅Hz^-1 = 6.6260701e-27 erg⋅Hz^-1
-    //      v is the frequency in Hz
-    //      c is the speed of light with value = 299792458 m / s^2, but we want it in cm / s^2 = 29979245800 cm / s^2
-    //      K_b is the Boltzmann constant with value = 1.380649e−23 J⋅K^−1, but we want it in erg⋅K^-1 = 1.380649e-16 erg⋅K^-1
-    //double h = 6.6260701e-27;
-    //double c = 29979245800;
-    //double K_b = 380649e-16;
-    /*
-    double h = 6.6262000e-27;
-    double c = 2.9979245800000e10;
-    double K_b = 1.3807e-16;
-    std::cout << (2*h*std::pow(frequency,3))/std::pow(c,2) << std::endl;
-    std::cout << (std::exp(h*frequency/K_b*temperature)-1) << std::endl;
-    return ((2*h*std::pow(frequency,3))/std::pow(c,2))/(std::exp(h*frequency/K_b*temperature)-1);
-     */
-    double xx = 4.7989e-11 * frequency / temperature;
-    return 1.47455e-47 * std::pow(frequency,3) / (std::exp(xx)-1) + 1.e-290;
-    //TODO : Entiendo la funcion original, pero no entiendo el algoritmo copiado, ¿qué tiene que ver?
+void stars::calculate_total_luminosities(std::vector<double> freq_dnu) {
+    //TODO : Esta funcion requiere verificar caleta de cosas, por ahora hacemos lo básico
+    double total_luminosity = 0.0;
+    double star_luminosity;
+    std::vector<double> star_spec;
+    double star_radio;
+    double x;
+    double PI = 3.14159265358979323846264338328;
+    double FOURPI = 12.5663706143591729538505735331;
+    std::vector<double> cumulative_spectrum(this->number_of_stars + 1);
+    for (int i = 0; i < this -> number_of_stars; ++i) {
+        star_spec = this -> stars_information[i].get_spectrum();
+        star_radio = this -> stars_information[i].get_star_radio();
+        star_luminosity = 0.0;
+        std::cout.precision(17);
+        for (int j = 0; j < this -> number_of_frequencies; ++j) {
+            x = PI * star_spec[j] * FOURPI * std::pow(star_radio,2);
+            star_luminosity = star_luminosity + x * freq_dnu[j];
+        }
+        this -> stars_information[i].set_luminosity(star_luminosity);
+        total_luminosity = total_luminosity + star_luminosity;
+    }
+    cumulative_spectrum[0] = 0.0;
+    for (int i = 1; i < this->number_of_stars; ++i) {
+        star_luminosity = this -> stars_information[i].get_luminosity();
+        cumulative_spectrum[i] = star_luminosity / total_luminosity;
+    }
+    cumulative_spectrum[this->number_of_stars] = 1.0;
+    for (int i = 0; i < this->number_of_stars; ++i) {
+        std::cout <<  stars_information[i].get_luminosity() << std::endl;
+    }
 }
 
 std::vector<star> stars::get_stars_information(void){
