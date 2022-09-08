@@ -9,6 +9,7 @@
 #include <cmath>
 //In order to make a vector to store the information of each star
 #include <star.hh>
+//In order to execute common functions in this class
 #include <common.hh>
 
 /*
@@ -25,6 +26,8 @@ private:
     int number_of_stars;
     //Medata from the star. If 1m the list of wavelengths (see below) will instead be a list of frequencies in Herz. In 2 is a list in micron.
     int iformat;
+    //Total luminosity of the stars in the simulation
+    double total_luminosity;
     //Vector with the information of each star
     std::vector<star> stars_information;
 
@@ -39,16 +42,19 @@ public:
     //Method that is going to calculate the spectrum of each star.
     //For this, we have 2 options : The star can be treated as a blackbody, and in that case we use the planck function
     //If the star is not a blackbody, then we calculate the spectrum in the surface of the star.
-    //Input : vector mean_intesity -> Vector that contains the mean intensity (frequency dnu) in the system
+    //Input : vector frequencies -> Vector that contains the frequencies in the system
     //Output : It has no output, but in the star_i it's going to store the calculated spectrum in a vector
-    void calculate_spectrum(std::vector<double> mean_intensity);
+    void calculate_spectrum(std::vector<double> frequencies);
 
     //In order to do the simulations, we need the cumulative spectrum of each star
-    //Input : vector mean_intesity -> Vector that contains the mean intensity (frequency dnu) in the system
-    //Output : It has no output, but in the star_i it's going to store the calculated cumulative spectrum in a vector
+    //Input : vector frequencies -> Vector that contains the frequencies in the system
+    //Output : It has no output, but the star_i it's going to store the calculated cumulative spectrum in a vector
     void calculate_cumulative_spectrum(std::vector<double> mean_intensity);
 
-    void calculate_total_luminosities(std::vector<double> freq_dnu);
+    //This method is going to calculate the luminosity of each star and the total luminosity of the system
+    //Input : vector mean_intensity -> vector that contains the mean intensity of the frequency
+    //Output
+    void calculate_total_luminosities(std::vector<double> mean_intensity);
 
     //Getter for the stars
     std::vector<star> get_stars_information(void);

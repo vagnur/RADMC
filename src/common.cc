@@ -207,15 +207,6 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
                 inumax = 0;
                 inumin = number_of_new_points-1;
             }
-            /*
-            std::cout.precision(17);
-            std::cout << inumax << std::endl;
-            std::cout << inumin << std::endl;
-            std::cout << new_points[i] << std::endl;
-            std::cout << old_points[inumin] << std::endl;
-            std::cout << old_points[inumax] << std::endl;
-            exit(0);
-             */
             if(new_points[i] <= new_points[inumin]){
                 if(new_points[i] <= (1.0-margin)*new_points[inumin]){
                     std::cerr << "Error in interpolation function" << std::endl;

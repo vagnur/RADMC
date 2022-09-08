@@ -177,6 +177,7 @@ int main() {
     stars st;
     st.read_stars();
     st.calculate_spectrum(freq_nu);
+    st.calculate_cumulative_spectrum(freq_dnu);
     st.calculate_total_luminosities(freq_dnu);
     return 0;
 }

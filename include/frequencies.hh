@@ -31,7 +31,7 @@ public:
 
     //Method to read the frequencies file, that can be "wavelenght_micron.inp" or ... (only working for wavelenght for now)
     //Input : It has no input
-    //Otput : It has no output, but its going to store the frequency values in the vector with the same name
+    //Otput : It has no output, but it's going to store the frequency values in the vector with the same name
     void read_frequencies(void);
 
     //Method to calculate the mean intensity according to the frequencies that has been read with the read_frequencies method

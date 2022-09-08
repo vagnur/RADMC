@@ -52,8 +52,10 @@ public:
     //Getter of the spectrum
     std::vector<double> get_spectrum();
 
+    //Getter of the luminosity
     double get_luminosity(void);
 
+    //Setter of the luminosity
     void set_luminosity(double luminosity);
 
     //Empty destructor

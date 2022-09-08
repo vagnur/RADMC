@@ -162,7 +162,7 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
 
 //TODO : Este metodo es general ya que se usa en varias partes del codigo, evaluar si dejar en common
 std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda, int number_of_lambdas){
-    //The vector that it going to store the calculated frequency points
+    //The vector that it's going to store the calculated frequency points
     std::vector<double> frequency(number_of_lambdas);
     //The point that we are going to calculate
     double frequency_value;

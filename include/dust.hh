@@ -21,7 +21,7 @@ private:
     //Metadata from the "dust_density.inp" file
     //The iformat right now is always 1 and there is no further information about this parameter
     int iformat_dust_density;
-    //This is the number of cells in the grid. Basicly, is the number of points present for each dust specie
+    //This is the number of cells in the grid. Basically, is the number of points present for each dust specie
     int number_of_cells;
     //The number of dust species present in the simulation
     int number_of_species;
@@ -69,6 +69,7 @@ public:
     //Getter for the dust species
     std::vector<dust_species> get_dust_species(void);
 
+    //Getter for the number of dust species
     int get_number_of_dust_species(void);
 
     //Empty destructor
