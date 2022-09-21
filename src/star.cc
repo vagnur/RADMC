@@ -44,6 +44,22 @@ void star::set_luminosity(double luminosity){
     this -> luminosity = luminosity;
 }
 
+void star::set_energy(double star_energy){
+    this -> energy = star_energy;
+}
+
+std::vector<double> star::get_star_position(){
+    return this -> positions;
+}
+
+void star::set_star_position(std::vector<double> star_position){
+    this -> positions = star_position;
+}
+
+double star::get_energy(void){
+    return this -> energy;
+}
+
 star::~star(void){
     ;
 }

@@ -14,6 +14,8 @@ private:
 
     //A 3D vector that store the densities of the dust in the grid
     std::vector<std::vector<std::vector<double>>> densities;
+    //A 3D vector that store the temperature of the dust in the grid
+    std::vector<std::vector<std::vector<double>>> temperatures;
     //Metadata from dustocap.inp file
     //This parameter is 1 if we are going to read "dustkappa_*.inp" file.
     //If 10, then we read "dustkapscatmat_*.inp" file
@@ -37,6 +39,8 @@ public:
 
     //Empty constructor
     dust_species(void);
+
+    void initialize_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z);
 
     //Setter for the density
     void set_density(std::vector<std::vector<std::vector<double>>> densities);

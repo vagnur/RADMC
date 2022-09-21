@@ -30,6 +30,8 @@ private:
     double total_luminosity;
     //Vector with the information of each star
     std::vector<star> stars_information;
+    //
+    std::vector<double> cumulative_spectrum;
 
 public:
 
@@ -56,11 +58,18 @@ public:
     //Output
     void calculate_total_luminosities(std::vector<double> mean_intensity);
 
+    void calculate_energy(int number_of_photons);
+
+    void fix_luminosities();
+
     //Getter for the stars
     std::vector<star> get_stars_information(void);
 
     //Empty destructor
 	~stars(void);
+
+    void jitter_stars(std::vector<double> cell_walls_x, int number_of_points_x, std::vector<double> cell_walls_y,
+                      int number_of_points_y, std::vector<double> cell_walls_z, int number_of_points_z);
 };
 
 #endif //RADMC_STARS_HH

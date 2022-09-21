@@ -160,6 +160,12 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
     //TODO : No quiero copiar el código original, porque raro, pero no sé cómo se llaman las técnicas de remapeo :c
 }
 
+void dust::initialize_specie_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z){
+    for (int i = 0; i < this -> number_of_species; ++i) {
+        this -> dust_species_information[i].initialize_temperature(number_of_points_x,number_of_points_y,number_of_points_z);
+    }
+}
+
 //TODO : Este metodo es general ya que se usa en varias partes del codigo, evaluar si dejar en common
 std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda, int number_of_lambdas){
     //The vector that it's going to store the calculated frequency points

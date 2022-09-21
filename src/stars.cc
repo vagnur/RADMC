@@ -157,7 +157,6 @@ void stars::calculate_total_luminosities(std::vector<double> mean_intensity) {
     double x;
     double PI = 3.14159265358979323846264338328;
     double FOURPI = 12.5663706143591729538505735331;
-    std::vector<double> cumulative_spectrum(this->number_of_stars + 1);
     for (int i = 0; i < this -> number_of_stars; ++i) {
         star_spec = this -> stars_information[i].get_spectrum();
         star_radio = this -> stars_information[i].get_star_radio();
@@ -171,12 +170,13 @@ void stars::calculate_total_luminosities(std::vector<double> mean_intensity) {
         total_luminosity = total_luminosity + star_luminosity;
     }
     this -> total_luminosity = total_luminosity;
+    this -> cumulative_spectrum.resize(number_of_stars+1);
     cumulative_spectrum[0] = 0.0;
     for (int i = 1; i < this->number_of_stars+1; ++i) {
         star_luminosity = this -> stars_information[i-1].get_luminosity();
-        cumulative_spectrum[i] = star_luminosity / total_luminosity;
+        this -> cumulative_spectrum[i] = star_luminosity / total_luminosity;
     }
-    cumulative_spectrum[this->number_of_stars] = 1.0;
+    this -> cumulative_spectrum[this->number_of_stars] = 1.0;
 }
 
 std::vector<star> stars::get_stars_information(void){
@@ -186,3 +186,55 @@ std::vector<star> stars::get_stars_information(void){
 stars::~stars(void){
     ;
 }
+
+void stars::calculate_energy(int number_of_photons) {
+    //TODO : Cambiar acorde a entrada
+    int number_of_sources = this -> number_of_stars;
+    double star_energy;
+    for (int i = 0; i < this -> number_of_stars; ++i) {
+        if(this -> stars_information[i].get_luminosity() < 0.0){
+            std::cerr << "ERROR: At star " << i << std::endl;
+            std::cerr << "ERROR: Cannot treat star with zero luminosity" << std::endl;
+            exit(0);
+        }
+    }
+    for (int i = 0; i < this -> number_of_stars; ++i) {
+        star_energy = this -> stars_information[i].get_luminosity() * number_of_sources / number_of_photons;
+        this -> stars_information[i].set_energy(star_energy);
+    }
+}
+
+void stars::jitter_stars(std::vector<double> cell_walls_x, int number_of_points_x,std::vector<double> cell_walls_y, int number_of_points_y,std::vector<double> cell_walls_z, int number_of_points_z){
+    double small_x,small_y,small_z,szx,szy,szz;
+    small_x = 0.48957949203816064943e-12;
+    small_y = 0.38160649492048957394e-12;
+    small_z = 0.64943484920957938160e-12;
+    szx = cell_walls_x[number_of_points_x] - cell_walls_x[0];
+    szy = cell_walls_y[number_of_points_y] - cell_walls_y[0];
+    szx = cell_walls_z[number_of_points_z] - cell_walls_z[0];
+    std::vector<double> star_position;
+    for (int i = 0; i < this -> number_of_stars; ++i) {
+        star_position = this -> stars_information[i].get_star_position();
+        star_position[0] = star_position[0] + szx * small_x;
+        star_position[1] = star_position[1] + szy * small_y;
+        star_position[2] = star_position[2] + szz * small_z;
+        this -> stars_information[i].set_star_position(star_position);
+    }
+}
+
+void stars::fix_luminosities() {
+    this -> cumulative_spectrum[0] = 0.0;
+    if(this -> stars_information[0].get_luminosity() > 0.0){
+        this -> cumulative_spectrum[1] = 1.0 / this -> number_of_stars;
+    }
+    else{
+        this -> cumulative_spectrum[1] = 0.0;
+    }
+    for (int i = 2; i < this->number_of_stars; ++i) {
+        if(this -> stars_information[i].get_luminosity() > 0.0){
+            this -> cumulative_spectrum[i+1] = this -> cumulative_spectrum[i] + 1.0 / this -> number_of_stars;
+        }
+    }
+    this -> cumulative_spectrum[this -> number_of_stars] = 1.0;
+}
+

@@ -17,6 +17,8 @@ private:
     double mass;
     //Luminosity of the star
     double luminosity;
+    //
+    double energy;
     //Position of the star at the x,y and z component
     std::vector<double> positions;
     //Flux of the star
@@ -58,9 +60,16 @@ public:
     //Setter of the luminosity
     void set_luminosity(double luminosity);
 
+    void set_energy(double star_energy);
+
+    double get_energy(void);
+
     //Empty destructor
     ~star(void);
 
+    std::vector<double> get_star_position();
+
+    void set_star_position(std::vector<double> star_position);
 };
 
 

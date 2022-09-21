@@ -310,7 +310,7 @@ int common::hunt(std::vector<double> xx, int n, double x, int jlo){
     }
 
     if(x == xx[0]){
-        jlo = - 0;
+        jlo = 0;
     }
 
     return jlo;

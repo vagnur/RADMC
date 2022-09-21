@@ -138,7 +138,6 @@ void grid::test_vectors(void){
 }
 
 double grid::found_point(double x){
-
     if(this->type == "cartesian"){
         int number_of_points = this->x_points.size();
         return std::floor(x/this->diference_x) + (number_of_points/2);
@@ -146,7 +145,6 @@ double grid::found_point(double x){
     if(this->type == "spherical"){
         return std::floor(x/this->diference_x);
     }
-
 }
 
 void grid::calculate_points_delta(void){

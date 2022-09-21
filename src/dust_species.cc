@@ -4,6 +4,11 @@ dust_species::dust_species(void){
     ;
 }
 
+void dust_species::initialize_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z) {
+    std::vector<std::vector<std::vector<double>>> temperatures(number_of_points_z,std::vector<std::vector<double>>(number_of_points_y,std::vector<double>(number_of_points_x,0)));
+    this -> temperatures = temperatures;
+}
+
 void dust_species::set_density(std::vector<std::vector<std::vector<double>>> densities){
     this -> densities = densities;
 }

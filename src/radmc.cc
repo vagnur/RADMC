@@ -168,7 +168,9 @@ int main() {
     std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq.size(),freq,2,1);
      */
 
+
     //PRUEBAS STARS
+    std::map<std::string,double> simulation_parameters = read_main_file();
     frequencies fr;
     fr.read_frequencies();
     fr.calculate_mean_intensity();
@@ -179,6 +181,9 @@ int main() {
     st.calculate_spectrum(freq_nu);
     st.calculate_cumulative_spectrum(freq_dnu);
     st.calculate_total_luminosities(freq_dnu);
+    st.calculate_energy(simulation_parameters["nphot"]);
+    st.fix_luminosities();
+
     return 0;
 }
 

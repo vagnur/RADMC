@@ -60,6 +60,8 @@ public:
     //Output: It has no output, but we are going to store vectors with the relevant information in each dust_specie object.
     void read_opacities(int specie_position, int input_style, std::string specie_name);
 
+    void initialize_specie_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z);
+
     //This method is going to convert the frequencies in the input to the corresponding lambda values
     //Input : vector<double> frequncy -> Represent the frequency points that we want to convert
     //        int number_of_frequecy -> Indicate the number of points that we want to convert
