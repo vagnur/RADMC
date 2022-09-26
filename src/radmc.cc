@@ -10,6 +10,7 @@
 
 std::map<std::string,double> read_main_file();
 std::vector<std::string> tokenize(std::string s, std::string del = " ");
+void f(std::vector<int>& entrada);
 
 //TODO : Gabo del futuro, recuerda verificar el tema de los digitos significativos. Si bien los valores dan,
 //TODO : hay que ver cómo afecta el resultado final la presicion de los valores respecto al radmc original
@@ -168,7 +169,7 @@ int main() {
     std::vector<double> abs_remap = common::remap_function(abs.size(), frequency, abs, freq.size(),freq,2,1);
      */
 
-
+    /*
     //PRUEBAS STARS
     std::map<std::string,double> simulation_parameters = read_main_file();
     frequencies fr;
@@ -183,8 +184,18 @@ int main() {
     st.calculate_total_luminosities(freq_dnu);
     st.calculate_energy(simulation_parameters["nphot"]);
     st.fix_luminosities();
+     */
 
+    std::vector<int> prueba = {1,2,3};
+    f(prueba);
+    for (unsigned int i = 0; i < prueba.size(); ++i) {
+        std::cout << prueba[i] << std::endl;
+    }
     return 0;
+}
+
+void f(std::vector<int>& entrada){
+    entrada.push_back(10);
 }
 
 std::vector<std::string> tokenize(std::string s, std::string del){

@@ -1,7 +1,7 @@
 #include <photon.hh>
 
 
-photon::photon(int number_of_species, int number_of_stars, const std::vector<double>& luminosities_cum, const std::vector<double>& star_energy, const std::vector<double>& star_position, const std::vector<int>& number_of_grid_points, const std::vector<double>& difference) {
+photon::photon(int number_of_species, int number_of_stars, int number_of_frequencies, const std::vector<double>& luminosities_cum, const std::vector<double>& star_energy, const std::vector<double>& star_position, const std::vector<int>& number_of_grid_points, const std::vector<double>& difference, const std::vector<double>& star_cumulative_spectrum){
     this -> orientation.resize(3);
     this -> direction.resize(3);
     this -> distance.resize(3);
@@ -11,6 +11,7 @@ photon::photon(int number_of_species, int number_of_stars, const std::vector<dou
     this -> enerPart.resize(number_of_species);
     this -> enerCum.resize(number_of_species + 1);
     this -> dbCumul.resize(number_of_species + 1);
+    //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     this -> identify_star(number_of_stars, luminosities_cum);
     double photon_energy = star_energy[this -> star_source];
     this -> ray_position[0] = star_position[0];
@@ -21,20 +22,21 @@ photon::photon(int number_of_species, int number_of_stars, const std::vector<dou
     this -> grid_position[2] = this -> found_point(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
     this -> get_random_direction();
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
-    this -> get_random_frequency_inu();
+    this -> get_random_frequency_inu(star_cumulative_spectrum,number_of_frequencies);
     this -> get_tau_path();
     this -> on_grid = true;
 }
 
-double photon::found_point(double x, std::string type, int number_of_points, double diference){
+int photon::found_point(double x, std::string type, int number_of_points, double difference){
     if(type == "cartesian"){
-        return std::floor(x/diference) + (number_of_points/2);
+        return std::floor(x/difference) + (number_of_points/2);
     }
     if(type == "spherical"){
-        return std::floor(x/diference);
+        return std::floor(x/difference);
     }
 }
 
+/*
 void photon::walk_full_path(){
     this -> walk_next_event();
     while (this -> on_grid){
@@ -55,20 +57,21 @@ void photon::walk_full_path(){
         this -> walk_next_event();
     }
 }
+*/
 
-void photon::do_absorption_event(int number_of_species, std::vector<std::vector<std::vector<std::vector<double>>>> temperatures){
+void photon::do_absorption_event(int number_of_species, std::vector<std::vector<std::vector<std::vector<double>>>>& temperatures, const std::vector<std::vector<std::vector<std::vector<double>>>>& cumulEner, const std::vector<std::vector<std::vector<std::vector<double>>>>& densities, double cellVolumes,const std::vector<double>& star_energies,const std::vector<std::vector<double>>& kappa_A,const std::vector<double>& dbTemp, const std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures,int number_of_frequencies, const std::vector<std::vector<std::vector<double>>>& dbCumulNorm){
     int ix = this -> grid_position[0];
     int iy = this -> grid_position[1];
     int iz = this -> grid_position[2];
-    this -> divideAbsorvedEnergy();
-    this -> addTemperatureDecoupled();
+    this -> divideAbsorvedEnergy(number_of_species,star_energies,densities,kappa_A);
+    this -> addTemperatureDecoupled(number_of_species,cumulEner,densities,cellVolumes,temperatures,dbTemp, dbLogEnerTemp, dbEnerTemp,number_of_temperatures);
     for (int i=0 ; i < number_of_species ; ++i){
         this -> tempLocal[i] = temperatures[i][iz][iy][ix];
     }
-    this -> pickRandomFreqDb();
+    this -> pickRandomFreqDb(number_of_frequencies,number_of_species,number_of_temperatures,dbTemp,dbCumulNorm);
 }
 
-void photon::pickRandomFreqDb(int number_of_frequencies, int number_of_species, int number_of_temperatures,std::vector<double> dbTemp, std::vector<std::vector<std::vector<double>>> dbCumulNorm){
+void photon::pickRandomFreqDb(int number_of_frequencies, int number_of_species, int number_of_temperatures, const std::vector<double>& dbTemp, const std::vector<std::vector<std::vector<double>>>& dbCumulNorm){
     std::random_device rd;  // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<> dis(0.0, 1.0);
@@ -136,7 +139,7 @@ void photon::pickRandomFreqDb(int number_of_frequencies, int number_of_species, 
     this -> ray_inu = inuPick;
 }
 
-void photon::addTemperatureDecoupled(int number_of_species){
+void photon::addTemperatureDecoupled(int number_of_species, const std::vector<std::vector<std::vector<std::vector<double>>>>& cumulEner, const std::vector<std::vector<std::vector<std::vector<double>>>>& densities, double cellVolumes, std::vector<std::vector<std::vector<std::vector<double>>>>& temperatures,const std::vector<double>& dbTemp, const std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures){
     int ix = this -> grid_position[0];
     int iy = this -> grid_position[1];
     int iz = this -> grid_position[2];
@@ -146,19 +149,20 @@ void photon::addTemperatureDecoupled(int number_of_species){
         cumen = cumulEner[iSpec][iz][iy][ix] / (densities[iSpec][iz][iy][ix] * cellVolumes);
         //TODO : Este vector inicia en 0 para cada especie en el objeto de polvo...
         //TODO : Hay que cachar si puedo cargar en cada protón y luego sumar todo o depende de las temps anteriores
-        temperatures[iSpec][iz][iy][ix] = this -> computeDusttempEnergyBd(emissivityDb, cumen, iSpec);
+        //const std::vector<double>& dbTemp, std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures, double energy, int iSpec
+        temperatures[iSpec][iz][iy][ix] = this -> computeDusttempEnergyBd(dbTemp,dbLogEnerTemp,dbEnerTemp,number_of_temperatures,cumen,iSpec);
         //dustTemperature->temperatures[iSpec][iz][iy][ix] = computeDusttempEnergyBd(emissivityDb, cumen, iSpec);
     }
 }
 
-double photon::computeDusttempEnergyBd(const std::vector<double>& dbTemp, std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures, double energy, int iSpec){
+double photon::computeDusttempEnergyBd(const std::vector<double>& dbTemp, const std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures, double energy, int iSpec){
     //printf("in computeDusttempEnergyBd\n");
     double tempReturn=0.0;
     int itemp = 0;
     double logEner = std::log(energy);
     double eps;
     //TODO : Obtener dblogenergtemp de la especie
-    itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, (double) logEner, number_of_temperatures/2;
+    itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, (double) logEner, number_of_temperatures/2);
     //printf("itemp=%d\n", *itemp);
     if (itemp >= number_of_temperatures-1){
         std::cerr << "ERROR : Too high temperature discovered" << std::endl;
@@ -190,7 +194,7 @@ double photon::computeDusttempEnergyBd(const std::vector<double>& dbTemp, std::v
     return tempReturn;
 }
 
-void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<double>& star_energies, const std::vector<std::vector<std::vector<double>>>& density, const std::vector<std::vector<double>>& kappa_A){
+void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<double>& star_energies, const std::vector<std::vector<std::vector<std::vector<double>>>>& density, const std::vector<std::vector<double>>& kappa_A){
     //printf("in divideAbsorvedEnergy\n");
     int ix = this -> grid_position[0];
     int iy = this -> grid_position[1];
@@ -202,7 +206,7 @@ void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<doubl
     }else{
         for (int i=0 ; i < number_of_species ; ++i){
             //TODO : Obtener densidad de la especie i
-            this -> enerPart[i] = density[iz][iy][ix] * kappa_A[i][this -> ray_inu];
+            this -> enerPart[i] = density[i][iz][iy][ix] * kappa_A[i][this -> ray_inu];
             //photon->enerPart[i] = dustDensity->densities[i][iz][iy][ix] * dustOpacity->kappaA[i][photon->iFrequency];
             alphaA += this -> enerPart[i];
         }
@@ -326,11 +330,11 @@ int photon::find_specie_to_scattering(int number_of_species){
 
 }
 
-void photon::walk_next_event(int number_of_species, const std::vector<double>& star_energies){
+void photon::walk_next_event(int number_of_species, std::vector<std::vector<std::vector<std::vector<double>>>> densities, std::vector<std::vector<double>> kappa_A, std::vector<std::vector<double>> kappa_S, const std::vector<double>& star_energies, const std::vector<int>& number_of_points ,const std::vector<double>& grid_cell_walls_x,const std::vector<double>& grid_cell_walls_y,const std::vector<double>& grid_cell_walls_z, std::vector<std::vector<std::vector<std::vector<double>>>>& cumulative_energy_specie){
     std::random_device rd;  // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<> dis(0.0, 1.0);
-    double minor_distance, fraction;
+    double minor_distance, fraction, add_tmp;
     bool carry_on = true;
     while(carry_on){
         this -> prev_ray_position[0] = this -> ray_position[0];
@@ -341,9 +345,9 @@ void photon::walk_next_event(int number_of_species, const std::vector<double>& s
         this -> prev_grid_position[1] = this -> grid_position[1];
         this -> prev_grid_position[2] = this -> grid_position[2];
 
-        minor_distance = this -> advance_next_position();
+        minor_distance = this -> advance_next_position(number_of_points,grid_cell_walls_x,grid_cell_walls_y,grid_cell_walls_z);
 
-        this -> calculate_opacity_coefficients();
+        this -> calculate_opacity_coefficients(minor_distance,number_of_species,densities,kappa_A,kappa_S);
 
         if(this -> tau_path_gone + this -> dtau > this -> tau_path_total){
             fraction = (this -> tau_path_total - tau_path_gone) / this -> dtau;
@@ -358,17 +362,16 @@ void photon::walk_next_event(int number_of_species, const std::vector<double>& s
 
             double dum = (1.0 - this -> albedo) * (this -> tau_path_total - this -> tau_path_gone) * star_energies[this -> star_source] / this -> alpha_A_total;
             for (int i=0 ; i < number_of_species ; ++i){
-                double addTmp = dum * this -> alpha_A_specie[i];
-                //TODO : Hay que ver cómo hacer este vector
-                cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] = cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] + add_tmp;
+                add_tmp = dum * this -> alpha_A_specie[i];
+               cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] += add_tmp;
             }
             carry_on = false;
         }
         else{
             double dum = (1.0 - this -> albedo) * this -> dtau * star_energies[this -> star_source] / this -> alpha_A_total;
             for (int i=0 ; i < number_of_species ; ++i){
-                double addTmp = dum * this -> alpha_A_specie[i];
-                cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] = cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] + add_tmp;
+                add_tmp = dum * this -> alpha_A_specie[i];
+                cumulative_energy_specie[i][this -> grid_position[2]][this ->grid_position[1]][this->grid_position[0]] += add_tmp;
             }
             this -> tau_path_gone =  this -> tau_path_gone + this -> dtau;
             carry_on = this -> on_grid;
@@ -400,9 +403,9 @@ void photon::calculate_opacity_coefficients(double minor_distance, int number_of
 
 }
 
-double photon::advance_next_position(){
+double photon::advance_next_position(const std::vector<int>&number_of_points, const std::vector<double>& grid_cell_walls_x,const std::vector<double>& grid_cell_walls_y,const std::vector<double>& grid_cell_walls_z){
     std::vector<int> signs = {-1,1};
-    this -> get_cell_walls();
+    this -> get_cell_walls(grid_cell_walls_x, grid_cell_walls_y, grid_cell_walls_z);
     this -> distance[0] = (this -> cell_walls[0] - this -> ray_position[0]) / this -> direction[0];
     this -> distance[1] = (this -> cell_walls[1] - this -> ray_position[1]) / this -> direction[1];
     this -> distance[2] = (this -> cell_walls[2] - this -> ray_position[2]) / this -> direction[2];
@@ -428,7 +431,7 @@ double photon::advance_next_position(){
         this -> grid_position[indexes[i]] = this -> grid_position[indexes[i]] + signs[this -> orientation[indexes[i]]];
     }
 
-    this -> is_on_grid();
+    this -> is_on_grid(number_of_points[0],number_of_points[1],number_of_points[2]);
     return min_distance;
 }
 
@@ -439,7 +442,7 @@ void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int numb
     this -> on_grid = on_x && on_y && on_z;
 }
 
-void photon::get_cell_walls(std::vector<double> grid_cell_walls_x,std::vector<double> grid_cell_walls_y,std::vector<double> grid_cell_walls_z){
+void photon::get_cell_walls(const std::vector<double>& grid_cell_walls_x,const std::vector<double>& grid_cell_walls_y,const std::vector<double>& grid_cell_walls_z){
     this -> cell_walls[0] = grid_cell_walls_x[this-> grid_position[0] + this -> orientation[0]];
     this -> cell_walls[1] = grid_cell_walls_y[this -> grid_position[1] + this -> orientation[1]];
     this -> cell_walls[2] = grid_cell_walls_z[this -> grid_position[2] + this -> orientation[2]];
@@ -526,6 +529,14 @@ int photon::get_star_source(void){
 
 void photon::set_star_source(int star_source){
     this -> star_source = star_source;
+}
+
+bool photon::get_on_grid_condition(){
+    return this -> on_grid;
+}
+
+bool photon::get_is_scattering_condition(){
+    return this -> is_scattering;
 }
 
 photon::~photon(void) {
