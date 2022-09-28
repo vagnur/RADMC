@@ -68,7 +68,6 @@ public:
                                         std::vector<std::vector<double>> kappa_S);
 
 
-
     int find_specie_to_scattering(int number_of_species);
 
     void getHenveyGreensteinDirection(const std::vector<double> &g);
@@ -89,13 +88,6 @@ public:
     double advance_next_position(const std::vector<int> &number_of_points, const std::vector<double> &grid_cell_walls_x,
                                  const std::vector<double> &grid_cell_walls_y,
                                  const std::vector<double> &grid_cell_walls_z);
-
-    void walk_next_event(int number_of_species, std::vector<std::vector<std::vector<std::vector<double>>>> densities,
-                         std::vector<std::vector<double>> kappa_A, std::vector<std::vector<double>> kappa_S,
-                         const std::vector<double> &star_energies, const std::vector<int> &number_of_points,
-                         const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
-                         const std::vector<double> &grid_cell_walls_z,
-                         std::vector<std::vector<std::vector<std::vector<double>>>> &cumulative_energy_specie);
 
 
     void addTemperatureDecoupled(int number_of_species,
@@ -124,6 +116,14 @@ public:
                         const std::vector<double> &dbTemp, const std::vector<std::vector<double>> &dbLogEnerTemp,
                         const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
                         int number_of_frequencies, const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
+
+    void
+    walk_next_event(int number_of_species, const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
+                    const std::vector<std::vector<double>> &kappa_A, const std::vector<std::vector<double>> &kappa_S,
+                    const std::vector<double> &star_energies, const std::vector<int> &number_of_points,
+                    const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
+                    const std::vector<double> &grid_cell_walls_z,
+                    std::vector<std::vector<std::vector<std::vector<double>>>> &cumulative_energy_specie);
 };
 
 
