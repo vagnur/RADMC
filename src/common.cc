@@ -178,8 +178,8 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
     std::vector<double> new_function(number_of_new_points);
     double specie_last_frequency = old_points.back();
     double specie_first_frequency = old_points[0];
-    double x,eps;
-    int inumax, inumin,inu;
+    double x,eps=-1.0;
+    int inumax, inumin,inu=-1;
     double margin = 1e-4;
     for (int i = 0; i < number_of_new_points; ++i) {
         if(((new_points[i] - specie_last_frequency)*(new_points[i] - specie_first_frequency)) < 0.0){
@@ -316,7 +316,7 @@ int common::hunt(std::vector<double> xx, int n, double x, int jlo){
     return jlo;
 }
 
-double common::black_body_planck_funcion(double temperature,double frequency){
+double common::black_body_planck_function(double temperature,double frequency){
     //This function calculates the Blackbody thermal radiation with the planck function
     //The planck function is definided as:
     //B_v(T) = [2 * h * v^3 / c^2] / [e^(h*v/K_b*T)-1]
@@ -343,4 +343,22 @@ double common::black_body_planck_funcion(double temperature,double frequency){
         return 1.47455e-47 * std::pow(frequency,3) / (std::exp(xx)-1) + 1.e-290;
     }
     //TODO : Entiendo la funcion original, pero no entiendo el algoritmo copiado, ¿qué tiene que ver?
+}
+
+std::vector<std::string> common::tokenize(std::string s, std::string del){
+    int start = 0;
+    int end = s.find(del);
+    std::string word;
+    std::vector<std::string> words;
+    while (end != -1) {
+        word = s.substr(start, end - start);
+        words.push_back(word);
+        //std::cout << s.substr(start, end - start) << std::endl;
+        start = end + del.size();
+        end = s.find(del, start);
+    }
+    word = s.substr(start, end - start);
+    words.push_back(word);
+    //std::cout << s.substr(start, end - start) << std::endl;
+    return words;
 }

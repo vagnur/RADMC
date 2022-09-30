@@ -14,7 +14,7 @@
 
 /*
  * An object of this class is going to store the information of each star present in the simulation
- * Each star it's the photon source, and we are going to store their relevant information present in the "stars.inp" file
+ * Each star it's a photon source, and we are going to store their relevant information present in the "stars.inp" file
  */
 class stars{
 
@@ -24,14 +24,14 @@ private:
     int number_of_frequencies;
     //Number of stars present in the simulation
     int number_of_stars;
-    //Medata from the star. If 1m the list of wavelengths (see below) will instead be a list of frequencies in Herz. In 2 is a list in micron.
+    //Medata from the star. If 1, the list of wavelengths will instead be a list of frequencies in Herz. In 2 is a list in micron.
     int iformat;
     //Total luminosity of the stars in the simulation
     double total_luminosity;
+    //Vector with the cumulative spectrum of the stars in the simulation
+    std::vector<double> cumulative_spectrum;
     //Vector with the information of each star
     std::vector<star> stars_information;
-    //
-    std::vector<double> cumulative_spectrum;
 
 public:
 
@@ -46,17 +46,18 @@ public:
     //If the star is not a blackbody, then we calculate the spectrum in the surface of the star.
     //Input : vector frequencies -> Vector that contains the frequencies in the system
     //Output : It has no output, but in the star_i it's going to store the calculated spectrum in a vector
-    void calculate_spectrum(std::vector<double> frequencies);
+    void calculate_spectrum(const std::vector<double>& frequencies);
 
     //In order to do the simulations, we need the cumulative spectrum of each star
     //Input : vector frequencies -> Vector that contains the frequencies in the system
     //Output : It has no output, but the star_i it's going to store the calculated cumulative spectrum in a vector
-    void calculate_cumulative_spectrum(std::vector<double> mean_intensity);
+    void calculate_cumulative_spectrum(const std::vector<double>& mean_intensity);
 
     //This method is going to calculate the luminosity of each star and the total luminosity of the system
     //Input : vector mean_intensity -> vector that contains the mean intensity of the frequency
-    //Output
-    void calculate_total_luminosities(std::vector<double> mean_intensity);
+    //Output : It has no output, but we are going to store the cumulative spectrum in the class atribute
+    void calculate_total_luminosities(const std::vector<double>& mean_intensity);
+
 
     void calculate_energy(int number_of_photons);
 
@@ -68,8 +69,7 @@ public:
     //Empty destructor
 	~stars(void);
 
-    void jitter_stars(std::vector<double> cell_walls_x, int number_of_points_x, std::vector<double> cell_walls_y,
-                      int number_of_points_y, std::vector<double> cell_walls_z, int number_of_points_z);
+    void jitter_stars(std::vector<double> cell_walls_x, std::vector<double> cell_walls_y, std::vector<double> cell_walls_z);
 };
 
 #endif //RADMC_STARS_HH

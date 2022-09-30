@@ -74,15 +74,15 @@ void frequencies::calculate_mean_intensity(void){
     }
 }
 
-int frequencies::get_number_frequency_points(){
+int frequencies::get_number_frequency_points() const{
     return this -> number_of_frequencies;
 }
 
-std::vector<double> frequencies::get_frequencies(){
+const std::vector<double>& frequencies::get_frequencies() const{
     return this -> frequency_values;
 }
 
-std::vector<double> frequencies::get_mean_intensity(){
+const std::vector<double>& frequencies::get_mean_intensity() const{
     return this -> mean_intensity_values;
 }
 

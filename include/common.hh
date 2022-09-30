@@ -48,7 +48,9 @@ public:
     //Input : double temperature -> It's the temperature that we are going to use in the formula
     //        double frequency -> Frequency for the planck function
     //Output : double value that represent the radiation at frequency_i and the assigned temperature
-    static double black_body_planck_funcion(double temperature,double frequency);
+    static double black_body_planck_function(double temperature,double frequency);
+
+    static std::vector<std::string> tokenize(std::string s, std::string del = " ");
 
 };
 

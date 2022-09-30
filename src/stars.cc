@@ -75,7 +75,7 @@ void stars::read_stars(void){
     input_file.close();
 }
 
-void stars::calculate_spectrum(std::vector<double> frequencies){
+void stars::calculate_spectrum(const std::vector<double>& frequencies){
     //First we declare the vectors that we are going to use in the process
     //Spectrum is the vector that is going to store the calculated spectrum of each star
     std::vector<double> spectrum;
@@ -92,7 +92,7 @@ void stars::calculate_spectrum(std::vector<double> frequencies){
         if(star_flux[0] < 0){
             //Then we calculate the blackbody spectrum for each intensity
             for (int j = 0; j < this -> number_of_frequencies; ++j) {
-                black_body_spectrum = common::black_body_planck_funcion(std::abs(star_flux[0]),frequencies[j]);
+                black_body_spectrum = common::black_body_planck_function(std::abs(star_flux[0]),frequencies[j]);
                 spectrum[j] = black_body_spectrum;
             }
             //Then we assing the calculated spectrum to the star
@@ -122,14 +122,16 @@ void stars::calculate_spectrum(std::vector<double> frequencies){
     }
 }
 
-void stars::calculate_cumulative_spectrum(std::vector<double> mean_intensity){
+void stars::calculate_cumulative_spectrum(const std::vector<double>& mean_intensity){
     //This vector is the spectrum of each star
     std::vector<double> star_spectrum;
     //In this vector we are going to save the acumulated spectrum of each star
-    std::vector<double> cumulative_spectrum(this->number_of_frequencies+1);
+    //std::vector<double> cumulative_spectrum(this->number_of_frequencies+1);
+    std::vector<double> cumulative_spectrum;
     std::cout.precision(17);
     //For each star...
     for (int i = 0; i < this -> number_of_stars; ++i) {
+        cumulative_spectrum.resize(this -> number_of_frequencies+1);
         //star_cumulative = 0;
         cumulative_spectrum[0] = 0.0;
         //We obtain the calculated spectrum of each star
@@ -144,11 +146,11 @@ void stars::calculate_cumulative_spectrum(std::vector<double> mean_intensity){
         //Then we assign the cumulative spectrum to the star
         stars_information[i].set_cumulative_spectrum(cumulative_spectrum);
         //We delete the calculated values in order to pass to the next star
-       //cumulative_spectrum.clear();
+        cumulative_spectrum.clear();
     }
 }
 
-void stars::calculate_total_luminosities(std::vector<double> mean_intensity) {
+void stars::calculate_total_luminosities(const std::vector<double>& mean_intensity) {
     //TODO : Esta funcion requiere verificar caleta de cosas, por ahora hacemos lo básico
     double total_luminosity = 0.0;
     double star_luminosity;
@@ -204,14 +206,17 @@ void stars::calculate_energy(int number_of_photons) {
     }
 }
 
-void stars::jitter_stars(std::vector<double> cell_walls_x, int number_of_points_x,std::vector<double> cell_walls_y, int number_of_points_y,std::vector<double> cell_walls_z, int number_of_points_z){
+void stars::jitter_stars(std::vector<double> cell_walls_x, std::vector<double> cell_walls_y, std::vector<double> cell_walls_z){
     double small_x,small_y,small_z,szx,szy,szz;
+    int number_of_points_x = cell_walls_x.size();
+    int number_of_points_y = cell_walls_y.size();
+    int number_of_points_z = cell_walls_z.size();
     small_x = 0.48957949203816064943e-12;
     small_y = 0.38160649492048957394e-12;
     small_z = 0.64943484920957938160e-12;
     szx = cell_walls_x[number_of_points_x] - cell_walls_x[0];
     szy = cell_walls_y[number_of_points_y] - cell_walls_y[0];
-    szx = cell_walls_z[number_of_points_z] - cell_walls_z[0];
+    szz = cell_walls_z[number_of_points_z] - cell_walls_z[0];
     std::vector<double> star_position;
     for (int i = 0; i < this -> number_of_stars; ++i) {
         star_position = this -> stars_information[i].get_star_position();

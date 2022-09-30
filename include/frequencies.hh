@@ -40,13 +40,15 @@ public:
     void calculate_mean_intensity(void);
 
     //Getter for the number of frequency points
-    int get_number_frequency_points();
+    int get_number_frequency_points() const;
 
     //Getter for the frequencies vector
-    std::vector<double> get_frequencies();
+    const std::vector<double>& get_frequencies() const;
 
     //Getter for the mean intensity vector
-    std::vector<double> get_mean_intensity();
+    const std::vector<double>& get_mean_intensity() const;
+
+
 
     //Destructor of the class
     ~frequencies(void);

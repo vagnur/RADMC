@@ -5,7 +5,7 @@
 
 /*
  * A star is the source of photons for the monte carlo therm simulation
- * Each star has relevant information that is going to be stores in each star object
+ * Each star has relevant information that is going to be stored in each star object
  */
 class star {
 

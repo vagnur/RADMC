@@ -102,7 +102,7 @@ std::vector<double> emissivity::absoprtion_event(double temp, int number_of_freq
     double fourpi = 12.5663706143591729538505735331;
     double demis = 0.0;
     for (int i = 0; i < number_of_frequencies; ++i) {
-        fnu_diff[i] = cell_alpha[i] * common::black_body_planck_funcion(temp,freq_nu[i]);
+        fnu_diff[i] = cell_alpha[i] * common::black_body_planck_function(temp,freq_nu[i]);
         demis = demis + (fnu_diff[i] * freq_dnu[i]);
     }
     demis = demis * fourpi;
