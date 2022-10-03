@@ -1,6 +1,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <monteCarlo.hh>
 #include <fstream>
 #include <frequencies.hh>
 #include <dust.hh>
@@ -8,16 +9,21 @@
 #include <stars.hh>
 #include <emissivity.hh>
 
+/*
 std::map<std::string,double> read_main_file();
 std::vector<std::string> tokenize(std::string s, std::string del = " ");
 void f(std::vector<int>& entrada);
 void g(std::vector<int> entrada);
+ */
 
 //TODO : Gabo del futuro, recuerda verificar el tema de los digitos significativos. Si bien los valores dan,
 //TODO : hay que ver cómo afecta el resultado final la presicion de los valores respecto al radmc original
 
 int main() {
     std::cout << "INICIANDO PRUEBAS" << std::endl;
+
+    monteCarlo mc;
+    mc.do_monte_carlo_therm_regular_cartesian_grid();
 
     /*
     //Probando emissitivy
@@ -194,7 +200,10 @@ int main() {
         std::cout << prueba[i] << std::endl;
     }
      */
+}
 
+
+    /*
     std::vector<int> prueba = {1,2,3};
     g(prueba);
     return 0;
@@ -210,3 +219,4 @@ void g(std::vector<int> entrada){
         std::cout << entrada[i] << std::endl;
     }
 }
+     */

@@ -100,6 +100,18 @@ const std::vector<double>& grid::get_z_points() const{
     return this -> z_points;
 }
 
+int grid::get_number_of_points_X() const {
+    return this -> number_of_points_x;
+}
+
+int grid::get_number_of_points_Y() const {
+    return this -> number_of_points_y;
+}
+
+int grid::get_number_of_points_Z() const {
+    return this -> number_of_points_z;
+}
+
 grid::~grid(void){
     ;
 }

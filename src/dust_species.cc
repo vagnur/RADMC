@@ -9,54 +9,102 @@ void dust_species::initialize_temperature(int number_of_points_x,int number_of_p
     this -> temperatures = temperatures;
 }
 
-void dust_species::set_density(std::vector<std::vector<std::vector<double>>> densities){
+void dust_species::set_density(const std::vector<std::vector<std::vector<double>>>& densities){
     this -> densities = densities;
 }
 
-void dust_species::set_lambda(std::vector<double> lambda){
+void dust_species::set_lambda(const std::vector<double>& lambda){
     this -> lambda = lambda;
 }
 
-void dust_species::set_kappa_absorption(std::vector<double> kappa_absorption){
+void dust_species::set_kappa_absorption(const std::vector<double>& kappa_absorption){
     this -> kappa_absorption = kappa_absorption;
 }
 
-void dust_species::set_kappa_scattering(std::vector<double> kappa_scattering){
+void dust_species::set_kappa_scattering(const std::vector<double>& kappa_scattering){
     this -> kappa_scattering = kappa_scattering;
 }
 
-void dust_species::set_g(std::vector<double> g){
+void dust_species::set_g(const std::vector<double>& g){
     this -> g = g;
 }
 
-void dust_species::set_frequency(std::vector<double> frequency){
+void dust_species::set_frequency(const std::vector<double>& frequency){
     this -> frequency = frequency;
 }
 
-std::vector<std::vector<std::vector<double>>> dust_species::get_densities(){
+const std::vector<std::vector<std::vector<double>>>& dust_species::get_densities() const{
     return this -> densities;
 }
 
-std::vector<double> dust_species::get_frequency(){
+const std::vector<double>& dust_species::get_frequency() const{
     return this -> frequency;
 }
 
-std::vector<double> dust_species::get_absoprtion(){
+const std::vector<double>& dust_species::get_absoprtion() const{
     return this -> kappa_absorption;
 }
 
-std::vector<double> dust_species::get_scattering(){
+const std::vector<double>& dust_species::get_scattering() const{
     return this -> kappa_scattering;
 }
 
-std::vector<double> dust_species::get_g(){
+const std::vector<double>& dust_species::get_g() const{
     return this -> g;
 }
 
-std::vector<double> dust_species::get_lambda(){
+const std::vector<double>& dust_species::get_lambda() const{
     return this -> lambda;
 }
 
 dust_species::~dust_species(void){
     ;
+}
+
+const std::vector<double>& dust_species::get_kappa_absorption_remapped() const {
+    return this -> kappa_absorption_remapped;
+}
+
+void dust_species::set_kappa_absorption_remapped(const std::vector<double>& kappa_absorption_remapped) {
+    this -> kappa_absorption_remapped = kappa_absorption_remapped;
+}
+
+const std::vector<double>& dust_species::get_kappa_scattering_remapped() const {
+    return this -> kappa_scattering_remapped;
+}
+
+void dust_species::set_kappa_scattering_remapped(const std::vector<double>& kappa_scattering_remapped) {
+    this -> kappa_scattering_remapped = kappa_scattering_remapped;
+}
+
+const std::vector<double>& dust_species::get_g_remapped() const {
+    return this -> g_remapped;
+}
+
+void dust_species::set_g_remapped(const std::vector<double>& g_remapped) {
+    this -> g_remapped = g_remapped;
+}
+
+const std::vector<double>& dust_species::get_kappa_absorption_interpoled() const {
+    return this -> kappa_absorption_interpoled;
+}
+
+void dust_species::set_kappa_absorption_interpoled(const std::vector<double>& kappa_absorption_interpoled) {
+    this -> kappa_absorption_interpoled = kappa_absorption_interpoled;
+}
+
+const std::vector<double>& dust_species::get_kappa_scattering_interpoled() const {
+    return this -> kappa_scattering_interpoled;
+}
+
+void dust_species::set_kappa_scattering_interpoled(const std::vector<double>& kappa_scattering_interpoled) {
+    this -> kappa_scattering_interpoled = kappa_scattering_interpoled;
+}
+
+const std::vector<double>& dust_species::get_g_interpoled() const {
+    return this -> g_interpoled;
+}
+
+void dust_species::set_g_interpoled(const std::vector<double>& g_interpoled) {
+    this -> g_interpoled = g_interpoled;
 }

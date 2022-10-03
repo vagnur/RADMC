@@ -8,14 +8,14 @@
 #include <cmath>
 
 /*
- * The object of this class its going to store the grid were the simualtion is going to run.
+ * The object of this class it's going to store the grid where the simulation is going to run.
  * It will store information about the grid, and it has methods to found a point inside the grid.
  */
 
 class grid{
 
 private:
-    //This string its going to store the type of grid (cartesian, polar) that we are going to use
+    //This string it's going to store the type of grid (cartesian, polar) that we are going to use
     std::string type;
     //This vector indicates if a dimension of the grid is present or not.
     //  For example, if present_points[0] = true, means that the x dimension is present in the grid
@@ -54,13 +54,18 @@ public:
 
     //Method that calculate the delta diference in each dimension
     //Input : It has no input
-    //Output : It has no output, but its going to store the calculated deltas in the object
+    //Output : It has no output, but it's going to store the calculated deltas in the object
     void calculate_points_delta(void);
 
     //Getter for each vector dimension of the grid
     const std::vector<double>&get_x_points() const;
     const std::vector<double>&get_y_points() const;
     const std::vector<double>&get_z_points() const;
+
+    //Getter for the number of points in each dimension
+    int get_number_of_points_X() const;
+    int get_number_of_points_Y() const;
+    int get_number_of_points_Z() const;
 
     //Destructor of the class
     ~grid(void);

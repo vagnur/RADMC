@@ -13,7 +13,9 @@
  * This class is going to work with the files "dust_density.inp", "dustopac.inp" and "dustkappa_*.inp".
  * From the "dust_density.inp" is going to obtain the density of each specie present in the grid and is going
  * to store according to the type of grid present in the simulation.
- * With the "dustopac.inp" and the "dustkappa_*.inp" is going to...
+ * With the "dustopac.inp" file is going to know the dust species (the names) that are present in the simulation.
+ * Each specie present in the dustopac file need to have its own "dustkappa_*.inp" (where * is the name of the
+ * dust specie) and is going to obtain information about the specie and their scattering properties.
 */
 class dust {
 
@@ -51,28 +53,30 @@ public:
     //Input: It has no input.
     //Output: It has no output. But since we are going to call the read_opacities method, we are going to store info in the
     //        dust_species objets.
-    void read_opacities_meta(void);
+    void read_opacities_meta(const std::vector<double>& frequencies);
 
     //This method is going to read each "dustkappa_<specie>.inp" file, and it's going to store the relevant information
     //according to the data presented in the file.
     //Input: int input_style -> Can be 1 or 10 and indicates which type file to open.
     //       string specie_name -> Name of the dust specie.
     //Output: It has no output, but we are going to store vectors with the relevant information in each dust_specie object.
-    void read_opacities(int specie_position, int input_style, std::string specie_name);
+    void read_opacities(int specie_position, int input_style, std::string specie_name, const std::vector<double>& frequencies);
+
+    void remap_opacities_values(int specie, const std::vector<double>& frequencies, int iformat);
 
     void initialize_specie_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z);
 
     //This method is going to convert the frequencies in the input to the corresponding lambda values
     //Input : vector<double> frequncy -> Represent the frequency points that we want to convert
     //        int number_of_frequecy -> Indicate the number of points that we want to convert
-    //Output : Its going to return a vector<double> with the lambda points
+    //Output : It's going to return a vector<double> with the lambda points
     std::vector<double> convert_lambda_to_frequency(std::vector<double> frequency,int number_of_frequency);
 
     //Getter for the dust species
-    std::vector<dust_species> get_dust_species(void);
+    const std::vector<dust_species>& get_dust_species(void) const;
 
     //Getter for the number of dust species
-    int get_number_of_dust_species(void);
+    int get_number_of_dust_species(void) const;
 
     //Empty destructor
     ~dust(void);

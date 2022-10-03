@@ -64,7 +64,7 @@ public:
     void fix_luminosities();
 
     //Getter for the stars
-    std::vector<star> get_stars_information(void);
+    const std::vector<star>& get_stars_information(void) const;
 
     //Empty destructor
 	~stars(void);

@@ -32,6 +32,18 @@ private:
     std::vector<double> kappa_scattering;
     //Vector to store the mean scattering angle
     std::vector<double> g;
+    //Vector to store the absorption opacity (remapped)
+    std::vector<double> kappa_absorption_remapped;
+    //Vector to store the scattering opacity (remapped)
+    std::vector<double> kappa_scattering_remapped;
+    //Vector to store the mean scattering angle (remapped)
+    std::vector<double> g_remapped;
+    //Vector to store the absorption opacity (interpoled)
+    std::vector<double> kappa_absorption_interpoled;
+    //Vector to store the scattering opacity (remapped)
+    std::vector<double> kappa_scattering_interpoled;
+    //Vector to store the mean scattering angle (remapped)
+    std::vector<double> g_interpoled;
     //Vector to store the frequency points
     std::vector<double> frequency;
 
@@ -43,39 +55,63 @@ public:
     void initialize_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z);
 
     //Setter for the density
-    void set_density(std::vector<std::vector<std::vector<double>>> densities);
+    void set_density(const std::vector<std::vector<std::vector<double>>>& densities);
 
     //Setter for the wavelength points
-    void set_lambda(std::vector<double> lambda);
+    void set_lambda(const std::vector<double>& lambda);
 
     //Setter for the absorption opacity
-    void set_kappa_absorption(std::vector<double> kappa_absorption);
+    void set_kappa_absorption(const std::vector<double>& kappa_absorption);
 
     //Setter for the scattering opacity
-    void set_kappa_scattering(std::vector<double> kappa_scattering);
+    void set_kappa_scattering(const std::vector<double>& kappa_scattering);
 
     //Setter for the scattering angle
-    void set_g(std::vector<double> g);
+    void set_g(const std::vector<double>& g);
 
     //Setter for the frequency points
-    void set_frequency(std::vector<double> frequency);
+    void set_frequency(const std::vector<double>& frequency);
 
     //Getter for the densities
-    std::vector<std::vector<std::vector<double>>> get_densities();
+    const std::vector<std::vector<std::vector<double>>>& get_densities() const;
 
     //Getter for frequency
-    std::vector<double> get_frequency();
+    const std::vector<double>& get_frequency() const;
 
     //Getter for absorption
-    std::vector<double> get_absoprtion();
+    const std::vector<double>& get_absoprtion() const;
 
     //Getter for scattering
-    std::vector<double> get_scattering();
+    const std::vector<double>& get_scattering() const;
 
     //Getter for mean scattering angle
-    std::vector<double> get_g();
+    const std::vector<double>& get_g() const;
 
-    std::vector<double> get_lambda();
+    const std::vector<double>& get_lambda() const;
+
+    const std::vector<double>& get_kappa_absorption_remapped() const;
+
+    void set_kappa_absorption_remapped(const std::vector<double>& kappa_absorption_remapped);
+
+    const std::vector<double>& get_kappa_scattering_remapped() const;
+
+    void set_kappa_scattering_remapped(const std::vector<double>& kappa_scattering_remapped);
+
+    const std::vector<double>& get_g_remapped() const;
+
+    void set_g_remapped(const std::vector<double>& g_remapped);
+
+    const std::vector<double>& get_kappa_absorption_interpoled() const;
+
+    void set_kappa_absorption_interpoled(const std::vector<double>& kappa_absorption_interpoled);
+
+    const std::vector<double>& get_kappa_scattering_interpoled() const;
+
+    void set_kappa_scattering_interpoled(const std::vector<double>& kappa_scattering_interpoled);
+
+    const std::vector<double>& get_g_interpoled() const;
+
+    void set_g_interpoled(const std::vector<double>& g_interpoled);
 
     //Empty destructor
     ~dust_species(void);

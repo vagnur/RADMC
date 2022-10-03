@@ -7,6 +7,7 @@
 #include <grid.hh>
 #include <frequencies.hh>
 #include <stars.hh>
+#include <dust.hh>
 
 class monteCarlo {
 
@@ -15,6 +16,8 @@ private:
     grid grid_object;
     frequencies frequencies_object;
     stars stars_object;
+    dust dust_object;
+
 
 public:
 

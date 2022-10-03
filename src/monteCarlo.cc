@@ -1,8 +1,4 @@
-//
-// Created by marcela on 29-09-22.
-//
-
-#include "monteCarlo.hh"
+#include <monteCarlo.hh>
 
 monteCarlo::monteCarlo(void) {
     ;
@@ -16,21 +12,33 @@ void monteCarlo::do_monte_carlo_therm_regular_cartesian_grid() {
     // ************ SETUP OF THE SIMULATION ENVIRONMENT **********************
     //We read the regular cartesian grid from the "amr_grid.inp" file
     this -> grid_object.initialize_cartesian_regular();
-    //We read the frequencies from the "wavelength_micron.inp" file and we calculate
+    //We read the frequencies from the "wavelength_micron.inp" file, and we calculate
     //  the mean intesity.
-    this -> frequencies_object.read_frequencies();
-    this -> frequencies_object.calculate_mean_intensity();
-    //We read the star sources from the "stars.inp" and we calculate the spectrum and its cummulative function,
-    //  the luminosities, the energy and we invoke the function "jitter_stars" in order to avoid the star being
-    //  exactly in the position of a wall of the grid
     //Note that freq_nu = frequencies_object.get_frequencies()
     //  and freq_dnu = frequencies_object.get_mean_intensity()
+    this -> frequencies_object.read_frequencies();
+    this -> frequencies_object.calculate_mean_intensity();
+    //We read the star sources from the "stars.inp" and we calculate the spectrum and its cumulative function,
+    //  the luminosities, the energy, and we invoke the function "jitter_stars" in order to avoid the star being
+    //  exactly in the position of a wall of the grid
     this -> stars_object.read_stars();
     this -> stars_object.calculate_spectrum(this -> frequencies_object.get_frequencies());
     this -> stars_object.calculate_cumulative_spectrum(this -> frequencies_object.get_mean_intensity());
     this -> stars_object.calculate_total_luminosities(this -> frequencies_object.get_mean_intensity());
+    this -> stars_object.calculate_energy(simulation_parameters["nphot"]);
     this -> stars_object.fix_luminosities();
     this -> stars_object.jitter_stars(this -> grid_object.get_x_points(),this -> grid_object.get_y_points(),this -> grid_object.get_z_points());
+    //We read the dust information.
+    //First, we read the "dust_density.inp" file, to obtain the density of the species in the grid
+    this -> dust_object.read_dust_species_density(this -> grid_object.get_number_of_points_X(),this -> grid_object.get_number_of_points_Y(),this -> grid_object.get_number_of_points_Z());
+    //Then, we read the opacities meta file.
+    //  This function also read each dustkappa_* file for each specie name.
+    //  It's going to remap and interpolate the readed values according to the frequencies domain
+    this -> dust_object.read_opacities_meta(this -> frequencies_object.get_frequencies());
+    //We calculate the temperatures DB. These values are precalculated temperatures that we are going to use in the simulation
+    //TODO : Invocar métodos de emisividad
+    //TODO : Traer lógica de fotones acá
+    //TODO : Prender velitas para que los fotones funken xd
 
 }
 

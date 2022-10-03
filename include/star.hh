@@ -37,39 +37,40 @@ public:
     star(double radio, double mass, double x_position, double y_position, double z_position);
 
     //Setter of the spectrum
-    void set_spectrum(std::vector<double> spectrum);
+    void set_spectrum(const std::vector<double>& spectrum);
 
     //Setter of the flux
-    void set_flux(std::vector<double> flux);
+    void set_flux(const std::vector<double>& flux);
 
     //Setter of the cumulative spectrum
-    void set_cumulative_spectrum(std::vector<double> cumulative_spectrum);
+    void set_cumulative_spectrum(const std::vector<double>& cumulative_spectrum);
 
     //Getter of the radio
-    double get_star_radio();
+    double get_star_radio() const;
 
     //Getter of the flux
-    std::vector<double> get_flux();
+    const std::vector<double>& get_flux() const;
 
     //Getter of the spectrum
-    std::vector<double> get_spectrum();
+    const std::vector<double>& get_spectrum() const;
 
     //Getter of the luminosity
-    double get_luminosity(void);
+    double get_luminosity(void) const;
 
     //Setter of the luminosity
     void set_luminosity(double luminosity);
 
     void set_energy(double star_energy);
 
-    double get_energy(void);
+    double get_energy(void) const;
+
+    const std::vector<double>& get_star_position() const;
+
+    void set_star_position(const std::vector<double>& star_position);
 
     //Empty destructor
     ~star(void);
 
-    std::vector<double> get_star_position();
-
-    void set_star_position(std::vector<double> star_position);
 };
 
 

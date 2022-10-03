@@ -181,7 +181,7 @@ void stars::calculate_total_luminosities(const std::vector<double>& mean_intensi
     this -> cumulative_spectrum[this->number_of_stars] = 1.0;
 }
 
-std::vector<star> stars::get_stars_information(void){
+const std::vector<star>& stars::get_stars_information(void) const{
     return this -> stars_information;
 }
 

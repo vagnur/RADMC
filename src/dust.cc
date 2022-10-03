@@ -57,7 +57,7 @@ void dust::read_dust_species_density(int number_of_point_x,int number_of_point_y
     input_file.close();
 }
 
-void dust::read_opacities_meta(void){
+void dust::read_opacities_meta(const std::vector<double>& frequencies){
     //Metadata from the "dustopac.inp" file.
     //Iformat is always 2.
     //number of species is the number of species present in the file
@@ -90,7 +90,7 @@ void dust::read_opacities_meta(void){
         //input_file >> specie_name;
         //Now we read the name of the dust specie, and then we read the relevant file with the method read_opacities
         input_file >> specie_name;
-        read_opacities(i,input_style,specie_name);
+        this -> read_opacities(i,input_style,specie_name, frequencies);
         //Then we read the separation line (only because the format of the input file)
         //NOTE : We are not reading the specie name, but it's not necessary to make a new string
         input_file >> specie_name;
@@ -98,11 +98,11 @@ void dust::read_opacities_meta(void){
     input_file.close();
 }
 
-void dust::read_opacities(int specie_position,int input_style, std::string specie_name){
+void dust::read_opacities(int specie_position,int input_style, std::string specie_name, const std::vector<double>& frequencies){
     //TODO : Por ahora asumo que input_style es 1, pero hay que generalizarlo para que pueda ser 10
     //Metadata from the dustkappa_*.inp file
     //iformat indicates the information present in the file
-    //number of lambas indicate the number of wavelength points in the file. Note that is not necessary the same
+    //number of lambdas indicate the number of wavelength points in the file. Note that is not necessary the same
     //  as the file wavelength_micron.inp (in general it's not the same)
     int iformat,number_of_lambdas;
     //We are going to use this variable to read the data from the file
@@ -157,8 +157,10 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
     this -> dust_species_information[specie_position].set_frequency(frequency);
     //TODO : Ahora mismo, tenemos distinta cantidad de puntos en los vectores, por lo que es necesario
     //TODO : remaper los puntos al dominio de las frequencias
-    //TODO : No quiero copiar el código original, porque raro, pero no sé cómo se llaman las técnicas de remapeo :c
+    this ->remap_opacities_values(specie_position,frequencies,iformat);
 }
+
+
 
 void dust::initialize_specie_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z){
     for (int i = 0; i < this -> number_of_species; ++i) {
@@ -182,14 +184,49 @@ std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda
     return frequency;
 }
 
-std::vector<dust_species> dust::get_dust_species(void){
+const std::vector<dust_species>& dust::get_dust_species(void) const{
     return this -> dust_species_information;
 }
 
-int dust::get_number_of_dust_species(void){
+int dust::get_number_of_dust_species(void) const{
     return this -> number_of_species;
 }
 
 dust::~dust(void){
     ;
+}
+
+void dust::remap_opacities_values(int specie, const std::vector<double>& frequencies, int iformat) {
+    std::vector<double> specie_frequencies;
+    std::vector<double> kappa_absorption;
+    std::vector<double> kappa_scattering;
+    std::vector<double> g;
+    std::vector<double> kappa_absorption_remapped;
+    std::vector<double> kappa_scattering_remapped;
+    std::vector<double> g_remapped;
+    std::vector<double> kappa_absorption_interpoled;
+    std::vector<double> kappa_scattering_interpoled;
+    std::vector<double> g_interpoled;
+    specie_frequencies = this -> dust_species_information[specie].get_frequency();
+    //Remap for kappa absorption
+    kappa_absorption = this -> dust_species_information[specie].get_absoprtion();
+    kappa_absorption_remapped = common::remap_function(kappa_absorption.size(),specie_frequencies,kappa_absorption,frequencies.size(),frequencies,2,1);
+    this -> dust_species_information[specie].set_kappa_absorption_remapped(kappa_absorption_remapped);
+    kappa_absorption_interpoled = common::interpolation_function(kappa_absorption,specie_frequencies,kappa_absorption.size(),frequencies,frequencies.size(),kappa_absorption_remapped);
+    this -> dust_species_information[specie].set_kappa_absorption_interpoled(kappa_scattering_interpoled);
+    //Remap for kappa scattering
+    if(iformat == 2 or iformat == 3) {
+        kappa_scattering = this->dust_species_information[specie].get_scattering();
+        kappa_scattering_remapped = common::remap_function(kappa_scattering.size(),specie_frequencies,kappa_scattering,frequencies.size(),frequencies,2,1);
+        this -> dust_species_information[specie].set_kappa_scattering_remapped(kappa_scattering_remapped);
+        kappa_scattering_interpoled = common::interpolation_function(kappa_scattering,specie_frequencies,kappa_scattering.size(),frequencies,frequencies.size(),kappa_absorption_remapped);
+        this -> dust_species_information[specie].set_kappa_scattering_interpoled(kappa_scattering_interpoled);
+    }
+    if(iformat == 3){
+        g = this->dust_species_information[specie].get_g();
+        g_remapped = common::remap_function(g.size(),specie_frequencies,g,frequencies.size(),frequencies,1,1);
+        this -> dust_species_information[specie].set_g_remapped(g_remapped);
+        g_interpoled = common::interpolation_function(g,specie_frequencies,g.size(),frequencies,frequencies.size(),g_remapped);
+        this -> dust_species_information[specie].set_g_interpoled(g_interpoled);
+    }
 }
