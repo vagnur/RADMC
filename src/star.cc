@@ -63,3 +63,7 @@ double star::get_energy(void) const{
 star::~star(void){
     ;
 }
+
+const std::vector<double> &star::get_cumulative_spectrum() const {
+    return cumulative_spectrum;
+}

@@ -64,6 +64,8 @@ public:
 
     double get_energy(void) const;
 
+    const std::vector<double>& get_cumulative_spectrum() const;
+
     const std::vector<double>& get_star_position() const;
 
     void set_star_position(const std::vector<double>& star_position);

@@ -1,5 +1,5 @@
-#ifndef RADMC_MONTECARLO_HH
-#define RADMC_MONTECARLO_HH
+#ifndef RADMC_MONTE_CARLO_HH
+#define RADMC_MONTE_CARLO_HH
 
 #include <map>
 
@@ -8,8 +8,10 @@
 #include <frequencies.hh>
 #include <stars.hh>
 #include <dust.hh>
+#include <emissivity.hh>
+#include <photon.hh>
 
-class monteCarlo {
+class monte_carlo {
 
 private:
 
@@ -17,19 +19,20 @@ private:
     frequencies frequencies_object;
     stars stars_object;
     dust dust_object;
-
+    emissivity emissivity_object;
+    std::vector<photon> photons;
 
 public:
 
-    monteCarlo(void);
+    monte_carlo(void);
 
     void do_monte_carlo_therm_regular_cartesian_grid();
 
     std::map<std::string,double> read_main_file(void);
 
-    ~monteCarlo(void);
+    ~monte_carlo(void);
 
 };
 
 
-#endif //RADMC_MONTECARLO_HH
+#endif //RADMC_MONTE_CARLO_HH

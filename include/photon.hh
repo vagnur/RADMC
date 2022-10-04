@@ -4,6 +4,8 @@
 #include <vector>
 #include <random>
 #include <common.hh>
+#include <star.hh>
+#include <dust_species.hh>
 
 class photon {
 
@@ -38,10 +40,10 @@ private:
 
 public:
 
+    photon();
+
     photon(int number_of_species, int number_of_stars, int number_of_frequencies,
-           const std::vector<double> &luminosities_cum, const std::vector<double> &star_energy,
-           const std::vector<double> &star_position, const std::vector<int> &number_of_grid_points,
-           const std::vector<double> &difference, const std::vector<double> &star_cumulative_spectrum);
+            const std::vector<double> &luminosities_cum, const std::vector<star>& star_information);
 
     int get_star_source(void);
 
@@ -63,9 +65,7 @@ public:
 
 
     void calculate_opacity_coefficients(double minor_distance, int number_of_species,
-                                        std::vector<std::vector<std::vector<std::vector<double>>>> densities,
-                                        std::vector<std::vector<double>> kappa_A,
-                                        std::vector<std::vector<double>> kappa_S);
+                                        const std::vector<dust_species>& dust_species_information);
 
 
     int find_specie_to_scattering(int number_of_species);
@@ -85,7 +85,7 @@ public:
                               const std::vector<std::vector<std::vector<std::vector<double>>>> &density,
                               const std::vector<std::vector<double>> &kappa_A);
 
-    double advance_next_position(const std::vector<int> &number_of_points, const std::vector<double> &grid_cell_walls_x,
+    double advance_next_position(int number_of_points_X, int number_of_points_Y, int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
                                  const std::vector<double> &grid_cell_walls_y,
                                  const std::vector<double> &grid_cell_walls_z);
 
@@ -118,12 +118,14 @@ public:
                         int number_of_frequencies, const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
 
     void
-    walk_next_event(int number_of_species, const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
-                    const std::vector<std::vector<double>> &kappa_A, const std::vector<std::vector<double>> &kappa_S,
-                    const std::vector<double> &star_energies, const std::vector<int> &number_of_points,
+    walk_next_event(int number_of_species, std::vector<dust_species>& dust_species_information,
+                    const std::vector<star>& stars_information, int number_of_points_X, int number_of_points_Y, int number_of_points_Z,
                     const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
-                    const std::vector<double> &grid_cell_walls_z,
-                    std::vector<std::vector<std::vector<std::vector<double>>>> &cumulative_energy_specie);
+                    const std::vector<double> &grid_cell_walls_z);
+
+    const std::vector<double> &getRayPosition() const;
+
+    void setGridPosition(const std::vector<int> &gridPosition);
 };
 
 

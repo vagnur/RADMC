@@ -1,7 +1,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include <monteCarlo.hh>
+#include <monte_carlo.hh>
 #include <fstream>
 #include <frequencies.hh>
 #include <dust.hh>
@@ -22,8 +22,9 @@ void g(std::vector<int> entrada);
 int main() {
     std::cout << "INICIANDO PRUEBAS" << std::endl;
 
-    monteCarlo mc;
+    monte_carlo mc;
     mc.do_monte_carlo_therm_regular_cartesian_grid();
+
 
     /*
     //Probando emissitivy
@@ -63,7 +64,7 @@ int main() {
 
     //void emissivity::generate_emissitivy_table(std::map<std::string,double> simulation_parameters,int number_of_species, int number_of_frequencies, std::vector<double> kappa_absorption, std::vector<double> freq_nu, std::vector<double> freq_dnu){
     emissivity emis;
-    emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_remap,freq_nu,freq_dnu);
+    emis.generate_emissivity_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_remap,freq_nu,freq_dnu);
     */
 
     /*
@@ -95,7 +96,7 @@ int main() {
     std::vector<double> abs_interpol = common::interpolation_function(abs,frequency,abs.size(),freq_nu,number_of_frequencies,abs_remap);
 
     emissivity emis;
-    emis.generate_emissitivy_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
+    emis.generate_emissivity_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
     emis.compute_derivate(number_of_dust_species,simulation_parameters["ntemp"],number_of_frequencies,freq_dnu);
     */
 

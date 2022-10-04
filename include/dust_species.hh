@@ -12,10 +12,12 @@ class dust_species {
 
 private:
 
-    //A 3D vector that store the densities of the dust in the grid
+    //A 3D vector that store the densities of the dust specie in the grid
     std::vector<std::vector<std::vector<double>>> densities;
-    //A 3D vector that store the temperature of the dust in the grid
+    //A 3D vector that store the temperature of the dust specie in the grid
     std::vector<std::vector<std::vector<double>>> temperatures;
+    //A 3D vector hat store the cumulative energy of the dust specie in the grid
+    std::vector<std::vector<std::vector<double>>> cumulative_energy;
     //Metadata from dustocap.inp file
     //This parameter is 1 if we are going to read "dustkappa_*.inp" file.
     //If 10, then we read "dustkapscatmat_*.inp" file
@@ -112,6 +114,8 @@ public:
     const std::vector<double>& get_g_interpoled() const;
 
     void set_g_interpoled(const std::vector<double>& g_interpoled);
+
+    void add_energy(int pos_X, int pos_Y, int pos_Z, double add_tmp);
 
     //Empty destructor
     ~dust_species(void);

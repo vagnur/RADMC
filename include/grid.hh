@@ -48,9 +48,9 @@ public:
     //void initialize_spherical_regular(void);
 
     //Method to found a ray position in the grid
-    //Input : It has no input
-    //Output : An integer that represent the position of the ray in the dimension of the grid
-    int found_point_cartesian_regular(double);
+    //Input : Vector ray_position -> Vector with the ray positions at X,Y and Z
+    //Output : Vector with the grid position of the ray at X,Y and Z
+    std::vector<int> found_point_cartesian_regular(const std::vector<double>& ray_position);
 
     //Method that calculate the delta diference in each dimension
     //Input : It has no input

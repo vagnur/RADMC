@@ -28,8 +28,8 @@ private:
     int iformat;
     //Total luminosity of the stars in the simulation
     double total_luminosity;
-    //Vector with the cumulative spectrum of the stars in the simulation
-    std::vector<double> cumulative_spectrum;
+    //Vector with the cumulative luminosity of the stars in the simulation
+    std::vector<double> cumulative_luminosity;
     //Vector with the information of each star
     std::vector<star> stars_information;
 
@@ -65,6 +65,10 @@ public:
 
     //Getter for the stars
     const std::vector<star>& get_stars_information(void) const;
+
+    const std::vector<double>& get_cumulative_luminosity() const;
+
+    int get_number_of_stars() const;
 
     //Empty destructor
 	~stars(void);

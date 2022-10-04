@@ -1,38 +1,49 @@
 #include <photon.hh>
 
+photon::photon(void){
+    ;
+}
+
 photon::photon(int number_of_species, int number_of_stars, int number_of_frequencies,
-               const std::vector<double> &luminosities_cum, const std::vector<double> &star_energy,
-               const std::vector<double> &star_position, const std::vector<int> &number_of_grid_points,
-               const std::vector<double> &difference, const std::vector<double> &star_cumulative_spectrum) {
+               const std::vector<double> &luminosities_cum, const std::vector<star>& star_information) {
     //At first, we resize each vector in order to store relevant information for the photon
     this->orientation.resize(3);
     this->direction.resize(3);
     this->distance.resize(3);
+    this->ray_position.resize(3);
+    this->grid_position.resize(3);
+    this -> prev_grid_position.resize(3);
+    this -> prev_ray_position.resize(3);
     this->alpha_A_specie.resize(number_of_species);
     this->alpha_S_specie.resize(number_of_species);
     this->cumulative_alpha.resize(number_of_species + 1);
     this->enerPart.resize(number_of_species);
     this->enerCum.resize(number_of_species + 1);
     this->dbCumul.resize(number_of_species + 1);
+    this -> cell_walls.resize(3);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //Then, we identify the star source of the photon
     this->identify_star(number_of_stars, luminosities_cum);
     //TODO : Que es esta energía xd?
     //TODO : El código original la saca pero acorde al code de esteban no hace nada
-    double photon_energy = star_energy[this->star_source];
+    //double photon_energy = star_energy[this->star_source];
+    double photon_energy = star_information[this -> star_source].get_energy();
     //We obtain the ray position of the photon in AU, and then we obtain the position of the photon in the grid
-    this->ray_position[0] = star_position[0];
-    this->ray_position[1] = star_position[1];
-    this->ray_position[2] = star_position[2];
-    this->grid_position[0] = this->found_point(ray_position[0], "cartesian", number_of_grid_points[0], difference[0]);
-    this->grid_position[1] = this->found_point(ray_position[1], "cartesian", number_of_grid_points[1], difference[1]);
-    this->grid_position[2] = this->found_point(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
+    this->ray_position[0] = star_information[this -> star_source].get_star_position()[0];
+    this->ray_position[1] = star_information[this -> star_source].get_star_position()[1];
+    this->ray_position[2] = star_information[this -> star_source].get_star_position()[2];
+    //this->ray_position[0] = star_position[0];
+    //this->ray_position[1] = star_position[1];
+    //this->ray_position[2] = star_position[2];
+    //this->grid_position[0] = this->found_point(ray_position[0], "cartesian", number_of_grid_points[0], difference[0]);
+    //this->grid_position[1] = this->found_point(ray_position[1], "cartesian", number_of_grid_points[1], difference[1]);
+    //this->grid_position[2] = this->found_point(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
     //We get a random direction for the photon
     this->get_random_direction();
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //We get a random frequency for the photon
     //At this frequency, we know relevant information about the scattering
-    this->get_random_frequency_inu(star_cumulative_spectrum, number_of_frequencies);
+    this->get_random_frequency_inu(star_information[this -> star_source].get_cumulative_spectrum(), number_of_frequencies);
     //TODO : Qué es el tau path
     this->get_tau_path();
     //At first, the photon is on the grid
@@ -52,12 +63,7 @@ void photon::identify_star(int number_of_stars, const std::vector<double> &lumin
 }
 
 int photon::found_point(double x, std::string type, int number_of_points, double difference) {
-    if (type == "cartesian") {
-        return std::floor(x / difference) + (number_of_points / 2);
-    }
-    if (type == "spherical") {
-        return std::floor(x / difference);
-    }
+    return std::floor(x / difference) + (number_of_points / 2);
 }
 
 void photon::get_random_direction() {
@@ -75,7 +81,7 @@ void photon::get_random_direction() {
     while (equal_zero) {
         while (l2 > 1.0) {
             dirx = 2.0 * dis(gen) - 1.0;
-            diry = 2.0 * dis(gen) - 1, 0;
+            diry = 2.0 * dis(gen) - 1.0;
             dirz = 2.0 * dis(gen) - 1.0;
             l2 = dirx * dirx + diry * diry + dirz * dirz;
             if (l2 < 1e-4) {
@@ -159,12 +165,9 @@ void photon::walk_full_path(){
 */
 
 void photon::walk_next_event(int number_of_species,
-                             const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
-                             const std::vector<std::vector<double>> &kappa_A,
-                             const std::vector<std::vector<double>> &kappa_S, const std::vector<double> &star_energies,
-                             const std::vector<int> &number_of_points, const std::vector<double> &grid_cell_walls_x,
-                             const std::vector<double> &grid_cell_walls_y, const std::vector<double> &grid_cell_walls_z,
-                             std::vector<std::vector<std::vector<std::vector<double>>>> &cumulative_energy_specie) {
+                             std::vector<dust_species>& dust_specie_information, const std::vector<star>& stars_information,
+                             int number_of_points_X, int number_of_points_Y, int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
+                             const std::vector<double> &grid_cell_walls_y, const std::vector<double> &grid_cell_walls_z) {
     //TODO : Generalizar
     std::random_device rd;  // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
@@ -182,10 +185,10 @@ void photon::walk_next_event(int number_of_species,
         this->prev_grid_position[2] = this->grid_position[2];
 
         //Then we calculate the minor distance to move to the next cell of the grid
-        minor_distance = this->advance_next_position(number_of_points, grid_cell_walls_x, grid_cell_walls_y,
+        minor_distance = this->advance_next_position(number_of_points_X, number_of_points_Y, number_of_points_Z, grid_cell_walls_x, grid_cell_walls_y,
                                                      grid_cell_walls_z);
 
-        this->calculate_opacity_coefficients(minor_distance, number_of_species, densities, kappa_A, kappa_S);
+        this->calculate_opacity_coefficients(minor_distance, number_of_species, dust_specie_information);
 
         if (this->tau_path_gone + this->dtau > this->tau_path_total) {
             fraction = (this->tau_path_total - tau_path_gone) / this->dtau;
@@ -202,17 +205,20 @@ void photon::walk_next_event(int number_of_species,
             this->grid_position[2] = this->prev_grid_position[2];
 
             double dum = (1.0 - this->albedo) * (this->tau_path_total - this->tau_path_gone) *
-                         star_energies[this->star_source] / this->alpha_A_total;
+                         stars_information[this->star_source].get_energy() / this->alpha_A_total;
             for (int i = 0; i < number_of_species; ++i) {
                 add_tmp = dum * this->alpha_A_specie[i];
-                cumulative_energy_specie[i][this->grid_position[2]][this->grid_position[1]][this->grid_position[0]] += add_tmp;
+                //TODO : como recibimos y cambiamos el vector?
+                dust_specie_information[i].add_energy(this -> grid_position[0],this -> grid_position[1],this -> grid_position[2],add_tmp);
+                //cumulative_energy_specie[i][this->grid_position[2]][this->grid_position[1]][this->grid_position[0]] += add_tmp;
             }
             carry_on = false;
         } else {
-            double dum = (1.0 - this->albedo) * this->dtau * star_energies[this->star_source] / this->alpha_A_total;
+            double dum = (1.0 - this->albedo) * this->dtau * stars_information[this->star_source].get_energy() / this->alpha_A_total;
             for (int i = 0; i < number_of_species; ++i) {
                 add_tmp = dum * this->alpha_A_specie[i];
-                cumulative_energy_specie[i][this->grid_position[2]][this->grid_position[1]][this->grid_position[0]] += add_tmp;
+                dust_specie_information[i].add_energy(this -> grid_position[0],this -> grid_position[1],this -> grid_position[2],add_tmp);
+                //cumulative_energy_specie[i][this->grid_position[2]][this->grid_position[1]][this->grid_position[0]] += add_tmp;
             }
             this->tau_path_gone = this->tau_path_gone + this->dtau;
             carry_on = this->on_grid;
@@ -223,7 +229,7 @@ void photon::walk_next_event(int number_of_species,
 }
 
 double
-photon::advance_next_position(const std::vector<int> &number_of_points, const std::vector<double> &grid_cell_walls_x,
+photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
                               const std::vector<double> &grid_cell_walls_y,
                               const std::vector<double> &grid_cell_walls_z) {
 
@@ -254,7 +260,7 @@ photon::advance_next_position(const std::vector<int> &number_of_points, const st
         this->grid_position[indexes[i]] = this->grid_position[indexes[i]] + signs[this->orientation[indexes[i]]];
     }
 
-    this->is_on_grid(number_of_points[0], number_of_points[1], number_of_points[2]);
+    this->is_on_grid(number_of_points_X, number_of_points_Y, number_of_points_Z);
     return min_distance;
 }
 
@@ -273,13 +279,11 @@ void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int numb
 }
 
 void photon::calculate_opacity_coefficients(double minor_distance, int number_of_species,
-                                            std::vector<std::vector<std::vector<std::vector<double>>>> densities,
-                                            std::vector<std::vector<double>> kappa_A,
-                                            std::vector<std::vector<double>> kappa_S) {
-    //We obatin the previos position of the photon before the movement
+                                            const std::vector<dust_species>& dust_species_information) {
+    //We obtain the previous position of the photon before the movement
     int ix = this->prev_grid_position[0];
-    int iy = this->prev_grid_position[0];
-    int iz = this->prev_grid_position[0];
+    int iy = this->prev_grid_position[1];
+    int iz = this->prev_grid_position[2];
 
     //In order to obtain the total opacity of the cell, we need to considerate the densities of the species as the
     //  position of the photon
@@ -287,10 +291,13 @@ void photon::calculate_opacity_coefficients(double minor_distance, int number_of
     double opacity_coefficient_alpha_S_total = 0;
 
     for (int i = 0; i < number_of_species; ++i) {
-        //We obtain the absorption opacity and the scattering opacity and then we do that value times the
+        //We obtain the absorption opacity and the scattering opacity, then we do that value times the
         //  density and we accumulate the result
-        this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
-        this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->ray_inu];
+
+        //this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
+        //this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->ray_inu];
+        this -> alpha_A_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_absorption_interpoled()[this->ray_inu];
+        this -> alpha_S_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_scattering_interpoled()[this->ray_inu];
         opacity_coefficient_alpha_A_total = opacity_coefficient_alpha_A_total + this->alpha_A_specie[i];
         opacity_coefficient_alpha_S_total = opacity_coefficient_alpha_S_total + this->alpha_S_specie[i];
     }
@@ -620,4 +627,12 @@ bool photon::get_is_scattering_condition() {
 
 photon::~photon(void) {
     ;
+}
+
+const std::vector<double> &photon::getRayPosition() const {
+    return ray_position;
+}
+
+void photon::setGridPosition(const std::vector<int>& gridPosition) {
+    grid_position = gridPosition;
 }

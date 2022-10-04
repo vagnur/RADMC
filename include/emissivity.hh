@@ -6,6 +6,7 @@
 #include <map>
 #include <cmath>
 #include <common.hh>
+#include <dust.hh>
 
 class emissivity {
 
@@ -14,6 +15,7 @@ private:
     std::vector<std::vector<double>> db_enertemp;
     std::vector<std::vector<double>> db_logenertemp;
     std::vector<std::vector<std::vector<double>>> db_emiss;
+    std::vector<std::vector<std::vector<double>>> db_cumulnorm;
 
 public:
 
@@ -21,13 +23,15 @@ public:
     emissivity(void);
 
     //
-    void generate_emissitivy_table(std::map<std::string,double> simulation_parameters, int number_of_species, int number_of_frequencies, std::vector<double> kappa_absorption, std::vector<double> freq_nu, std::vector<double> freq_dnu);
+    void generate_emissivity_table(std::map<std::string,double>& simulation_parameters, int number_of_species, const std::vector<dust_species>& dust_species_information, const std::vector<double>& freq_nu, const std::vector<double>& freq_dnu);
 
     //
-    void compute_derivate(int number_of_species, int number_of_temperatures, int number_of_frequencies, std::vector<double> freq_dnu);
+    void compute_derivate(int number_of_species, int number_of_temperatures, const std::vector<double>& freq_dnu);
 
     //
-    std::vector<double> absoprtion_event(double temp, int number_of_frequencies, std::vector<double> cell_alpha, std::vector<double> freq_nu, std::vector<double> freq_dnu);
+    std::vector<double> absorption_event(double temp, int number_of_frequencies, const std::vector<double>& cell_alpha, const std::vector<double>& freq_nu, const std::vector<double>& freq_dnu);
+
+    const std::vector<std::vector<std::vector<double>>> &getDbCumulnorm() const;
 
     //Empty destructor
     ~emissivity(void);

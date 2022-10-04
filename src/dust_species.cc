@@ -7,6 +7,8 @@ dust_species::dust_species(void){
 void dust_species::initialize_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z) {
     std::vector<std::vector<std::vector<double>>> temperatures(number_of_points_z,std::vector<std::vector<double>>(number_of_points_y,std::vector<double>(number_of_points_x,0)));
     this -> temperatures = temperatures;
+    std::vector<std::vector<std::vector<double>>> cumulative_energy(number_of_points_z,std::vector<std::vector<double>>(number_of_points_y,std::vector<double>(number_of_points_x,0)));
+    this -> cumulative_energy = cumulative_energy;
 }
 
 void dust_species::set_density(const std::vector<std::vector<std::vector<double>>>& densities){
@@ -107,4 +109,8 @@ const std::vector<double>& dust_species::get_g_interpoled() const {
 
 void dust_species::set_g_interpoled(const std::vector<double>& g_interpoled) {
     this -> g_interpoled = g_interpoled;
+}
+
+void dust_species::add_energy(int pos_X, int pos_Y, int pos_Z, double add_tmp) {
+    this -> cumulative_energy[pos_Z][pos_Y][pos_X] += add_tmp;
 }

@@ -1,10 +1,10 @@
-#include <monteCarlo.hh>
+#include <monte_carlo.hh>
 
-monteCarlo::monteCarlo(void) {
+monte_carlo::monte_carlo(void) {
     ;
 }
 
-void monteCarlo::do_monte_carlo_therm_regular_cartesian_grid() {
+void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //At first, we read the main radmc3d.inp file. This file contains several information about the simulation
     //  and its parameters
     std::map<std::string,double> simulation_parameters = read_main_file();
@@ -35,14 +35,47 @@ void monteCarlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //  This function also read each dustkappa_* file for each specie name.
     //  It's going to remap and interpolate the readed values according to the frequencies domain
     this -> dust_object.read_opacities_meta(this -> frequencies_object.get_frequencies());
-    //We calculate the temperatures DB. These values are precalculated temperatures that we are going to use in the simulation
-    //TODO : Invocar métodos de emisividad
-    //TODO : Traer lógica de fotones acá
-    //TODO : Prender velitas para que los fotones funken xd
+    //The last process for the dust is to initialize the temperatures of each specie in the grid
+    this -> dust_object.initialize_specie_temperature(this -> grid_object.get_number_of_points_X(),this -> grid_object.get_number_of_points_Y(),this -> grid_object.get_number_of_points_Z());
+    //We calculate the temperatures DB. These values are precalculated temperatures that we are going to use in the simulation.
+    this -> emissivity_object.generate_emissivity_table(simulation_parameters,this -> dust_object.get_number_of_dust_species(),this -> dust_object.get_dust_species(),this -> frequencies_object.get_frequencies(),this->frequencies_object.get_mean_intensity());
+    this -> emissivity_object.compute_derivate(this -> dust_object.get_number_of_dust_species(),simulation_parameters["ntemp"],this -> frequencies_object.get_mean_intensity());
+    //With this, we end the setup process, and we proceed to run the photons
+    // *********************** SIMULATION LOGIC *************************
+    //We start by setting up the photons
 
+    /*
+    this -> photons.assign(simulation_parameters["nphot"],photon(this -> dust_object.get_number_of_dust_species(),
+                                                                 this -> stars_object.get_number_of_stars(),
+                                                                 this -> frequencies_object.get_number_frequency_points(),
+                                                                 this -> stars_object.get_cumulative_luminosity(),
+                                                                 this -> stars_object.get_stars_information()));
+
+    */
+    this -> photons.resize(simulation_parameters["nphot"]);
+    //for (int i = 0; i < this -> photons.size(); ++i) {
+    for (int i = 0; i < 10; ++i) {
+        this -> photons[i] = photon(this -> dust_object.get_number_of_dust_species(),
+                            this -> stars_object.get_number_of_stars(),
+                            this -> frequencies_object.get_number_frequency_points(),
+                            this -> stars_object.get_cumulative_luminosity(),
+                            this -> stars_object.get_stars_information());
+        //TODO : calcular la posición del foton respecto a la pos del rasho
+        this -> photons[i].setGridPosition(this -> grid_object.found_point_cartesian_regular(this -> photons[i].getRayPosition()));
+        //TODO : Acá inicia el ciclo del camino copmpleto, es saltar al sgte evento y verificar si estamos dentro de la grilla. Si está, hacer los eventos relacionados
+        this -> photons[i].walk_next_event(this -> dust_object.get_number_of_dust_species(),
+                                           this -> dust_object.get_dust_species_to_change(),
+                                           this -> stars_object.get_stars_information(),
+                                           this -> grid_object.get_number_of_points_X(),
+                                           this -> grid_object.get_number_of_points_Y(),
+                                           this -> grid_object.get_number_of_points_Z(),
+                                           this -> grid_object.get_x_points(),
+                                           this -> grid_object.get_y_points(),
+                                           this -> grid_object.get_z_points());
+    }
 }
 
-std::map<std::string,double> monteCarlo::read_main_file(void){
+std::map<std::string,double> monte_carlo::read_main_file(void){
     //First we create a map with the default values
     std::map<std::string,double> simulation_parameters;
     //###PHOTONS###
@@ -131,6 +164,6 @@ std::map<std::string,double> monteCarlo::read_main_file(void){
     return simulation_parameters;
 }
 
-monteCarlo::~monteCarlo(void) {
+monte_carlo::~monte_carlo(void) {
     ;
 }

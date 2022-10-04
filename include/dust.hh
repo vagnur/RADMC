@@ -75,6 +75,8 @@ public:
     //Getter for the dust species
     const std::vector<dust_species>& get_dust_species(void) const;
 
+    std::vector<dust_species>& get_dust_species_to_change(void);
+
     //Getter for the number of dust species
     int get_number_of_dust_species(void) const;
 

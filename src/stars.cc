@@ -128,7 +128,6 @@ void stars::calculate_cumulative_spectrum(const std::vector<double>& mean_intens
     //In this vector we are going to save the acumulated spectrum of each star
     //std::vector<double> cumulative_spectrum(this->number_of_frequencies+1);
     std::vector<double> cumulative_spectrum;
-    std::cout.precision(17);
     //For each star...
     for (int i = 0; i < this -> number_of_stars; ++i) {
         cumulative_spectrum.resize(this -> number_of_frequencies+1);
@@ -172,13 +171,13 @@ void stars::calculate_total_luminosities(const std::vector<double>& mean_intensi
         total_luminosity = total_luminosity + star_luminosity;
     }
     this -> total_luminosity = total_luminosity;
-    this -> cumulative_spectrum.resize(number_of_stars+1);
-    cumulative_spectrum[0] = 0.0;
+    this -> cumulative_luminosity.resize(number_of_stars+1);
+    this -> cumulative_luminosity[0] = 0.0;
     for (int i = 1; i < this->number_of_stars+1; ++i) {
         star_luminosity = this -> stars_information[i-1].get_luminosity();
-        this -> cumulative_spectrum[i] = star_luminosity / total_luminosity;
+        this -> cumulative_luminosity[i] = star_luminosity / total_luminosity;
     }
-    this -> cumulative_spectrum[this->number_of_stars] = 1.0;
+    this -> cumulative_luminosity[this->number_of_stars] = 1.0;
 }
 
 const std::vector<star>& stars::get_stars_information(void) const{
@@ -228,18 +227,26 @@ void stars::jitter_stars(std::vector<double> cell_walls_x, std::vector<double> c
 }
 
 void stars::fix_luminosities() {
-    this -> cumulative_spectrum[0] = 0.0;
+    this -> cumulative_luminosity[0] = 0.0;
     if(this -> stars_information[0].get_luminosity() > 0.0){
-        this -> cumulative_spectrum[1] = 1.0 / this -> number_of_stars;
+        this -> cumulative_luminosity[1] = 1.0 / this -> number_of_stars;
     }
     else{
-        this -> cumulative_spectrum[1] = 0.0;
+        this -> cumulative_luminosity[1] = 0.0;
     }
-    for (int i = 2; i < this->number_of_stars; ++i) {
+    for (int i = 1; i < this->number_of_stars; ++i) {
         if(this -> stars_information[i].get_luminosity() > 0.0){
-            this -> cumulative_spectrum[i+1] = this -> cumulative_spectrum[i] + 1.0 / this -> number_of_stars;
+            this -> cumulative_luminosity[i+1] = this -> cumulative_luminosity[i] + 1.0 / this -> number_of_stars;
         }
     }
-    this -> cumulative_spectrum[this -> number_of_stars] = 1.0;
+    this -> cumulative_luminosity[this -> number_of_stars] = 1.0;
+}
+
+int stars::get_number_of_stars() const {
+    return number_of_stars;
+}
+
+const std::vector<double> &stars::get_cumulative_luminosity() const {
+    return cumulative_luminosity;
 }
 

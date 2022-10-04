@@ -157,7 +157,7 @@ void dust::read_opacities(int specie_position,int input_style, std::string speci
     this -> dust_species_information[specie_position].set_frequency(frequency);
     //TODO : Ahora mismo, tenemos distinta cantidad de puntos en los vectores, por lo que es necesario
     //TODO : remaper los puntos al dominio de las frequencias
-    this ->remap_opacities_values(specie_position,frequencies,iformat);
+    this -> remap_opacities_values(specie_position,frequencies,iformat);
 }
 
 
@@ -213,7 +213,7 @@ void dust::remap_opacities_values(int specie, const std::vector<double>& frequen
     kappa_absorption_remapped = common::remap_function(kappa_absorption.size(),specie_frequencies,kappa_absorption,frequencies.size(),frequencies,2,1);
     this -> dust_species_information[specie].set_kappa_absorption_remapped(kappa_absorption_remapped);
     kappa_absorption_interpoled = common::interpolation_function(kappa_absorption,specie_frequencies,kappa_absorption.size(),frequencies,frequencies.size(),kappa_absorption_remapped);
-    this -> dust_species_information[specie].set_kappa_absorption_interpoled(kappa_scattering_interpoled);
+    this -> dust_species_information[specie].set_kappa_absorption_interpoled(kappa_absorption_interpoled);
     //Remap for kappa scattering
     if(iformat == 2 or iformat == 3) {
         kappa_scattering = this->dust_species_information[specie].get_scattering();
@@ -229,4 +229,8 @@ void dust::remap_opacities_values(int specie, const std::vector<double>& frequen
         g_interpoled = common::interpolation_function(g,specie_frequencies,g.size(),frequencies,frequencies.size(),g_remapped);
         this -> dust_species_information[specie].set_g_interpoled(g_interpoled);
     }
+}
+
+std::vector<dust_species> &dust::get_dust_species_to_change(void) {
+    return this -> dust_species_information;
 }
