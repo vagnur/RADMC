@@ -4,7 +4,8 @@ photon::photon(void){
     ;
 }
 
-photon::photon(int number_of_species, int number_of_stars, int number_of_frequencies,
+photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+               int number_of_species, int number_of_stars, int number_of_frequencies,
                const std::vector<double> &luminosities_cum, const std::vector<star>& star_information) {
     //At first, we resize each vector in order to store relevant information for the photon
     this->orientation.resize(3);
@@ -23,7 +24,7 @@ photon::photon(int number_of_species, int number_of_stars, int number_of_frequen
     this -> cell_walls.resize(3);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //Then, we identify the star source of the photon
-    this->identify_star(number_of_stars, luminosities_cum);
+    this->identify_star(generator,uniform_zero_one_distribution,number_of_stars, luminosities_cum);
     //TODO : Que es esta energía xd?
     //TODO : El código original la saca pero acorde al code de esteban no hace nada
     //double photon_energy = star_energy[this->star_source];
@@ -39,24 +40,20 @@ photon::photon(int number_of_species, int number_of_stars, int number_of_frequen
     //this->grid_position[1] = this->found_point(ray_position[1], "cartesian", number_of_grid_points[1], difference[1]);
     //this->grid_position[2] = this->found_point(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
     //We get a random direction for the photon
-    this->get_random_direction();
+    this->get_random_direction(generator, uniform_zero_one_distribution);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //We get a random frequency for the photon
-    //At this frequency, we know relevant information about the scattering
-    this->get_random_frequency_inu(star_information[this -> star_source].get_cumulative_spectrum(), number_of_frequencies);
+    //At this frequency, we know relevant information about the scattering properties of the dust specie
+    this->get_random_frequency_inu(generator, uniform_zero_one_distribution,star_information[this -> star_source].get_cumulative_spectrum(), number_of_frequencies);
     //TODO : Qué es el tau path
-    this->get_tau_path();
+    this->get_tau_path(generator,uniform_zero_one_distribution);
     //At first, the photon is on the grid
     this->on_grid = true;
 }
 
-void photon::identify_star(int number_of_stars, const std::vector<double> &luminosities_cum) {
-    //TODO : Dejar los generadores aleatorios en la clase, se usan varias veces...o bien! generar una funcion en common no?
-    //TDOO : podría generalizar el método.
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    int star_lum = dis(gen);
+void photon::identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                           int number_of_stars, const std::vector<double> &luminosities_cum) {
+    double star_lum = uniform_zero_one_distribution(generator);
     //TODO : Obtener luminosities cum
     int star = common::hunt(luminosities_cum, number_of_stars + 1, star_lum, number_of_stars / 2);
     this->star_source = star;
@@ -66,23 +63,19 @@ int photon::found_point(double x, std::string type, int number_of_points, double
     return std::floor(x / difference) + (number_of_points / 2);
 }
 
-void photon::get_random_direction() {
+void photon::get_random_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
     //TODO : Entender este vector
     //TODO : dejar este vector en el objeto
     std::vector<int> values_orientations = {0, 1, 1};
-    //TODO : Generalizar
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
     double l2, dirx, diry, dirz, linv;
     int ix, iy, iz;
     bool equal_zero = true;
     l2 = 2.0;
     while (equal_zero) {
         while (l2 > 1.0) {
-            dirx = 2.0 * dis(gen) - 1.0;
-            diry = 2.0 * dis(gen) - 1.0;
-            dirz = 2.0 * dis(gen) - 1.0;
+            dirx = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+            diry = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+            dirz = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
             l2 = dirx * dirx + diry * diry + dirz * dirz;
             if (l2 < 1e-4) {
                 l2 = 2.0;
@@ -123,20 +116,15 @@ void photon::chek_unity_vector(double x, double y, double z) {
     }
 }
 
-void photon::get_random_frequency_inu(const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies) {
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    double rn = dis(gen);
+void photon::get_random_frequency_inu(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                      const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies) {
+    double rn = uniform_zero_one_distribution(generator);
     int ray_inu = common::hunt(star_cumulative_spectrum, number_of_frequencies + 1, rn, number_of_frequencies / 2);
     this->ray_inu = ray_inu;
 }
 
-void photon::get_tau_path() {
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    double rn = dis(gen);
+void photon::get_tau_path(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
+    double rn = uniform_zero_one_distribution(generator);
     this->tau_path_total = -1.0 * std::log(1.0 - rn);
     this->tau_path_gone = 0.0;
 }
@@ -324,9 +312,10 @@ void photon::do_absorption_event(int number_of_species,
     int ix = this->grid_position[0];
     int iy = this->grid_position[1];
     int iz = this->grid_position[2];
-    this->divideAbsorvedEnergy(number_of_species, star_energies, densities, kappa_A);
-    this->addTemperatureDecoupled(number_of_species, cumulEner, densities, cellVolumes, temperatures, dbTemp,
-                                  dbLogEnerTemp, dbEnerTemp, number_of_temperatures);
+    //TODO : VAMOS ACA
+    //this->divideAbsorvedEnergy(number_of_species, star_energies, densities, kappa_A);
+    //this->addTemperatureDecoupled(number_of_species, cumulEner, densities, cellVolumes, temperatures, dbTemp,
+    //                              dbLogEnerTemp, dbEnerTemp, number_of_temperatures);
     for (int i = 0; i < number_of_species; ++i) {
         this->tempLocal[i] = temperatures[i][iz][iy][ix];
     }
@@ -405,26 +394,30 @@ void photon::pickRandomFreqDb(int number_of_frequencies, int number_of_species, 
     this->ray_inu = inuPick;
 }
 
-void photon::addTemperatureDecoupled(int number_of_species,
-                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &cumulEner,
-                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
-                                     double cellVolumes,
-                                     std::vector<std::vector<std::vector<std::vector<double>>>> &temperatures,
-                                     const std::vector<double> &dbTemp,
-                                     const std::vector<std::vector<double>> &dbLogEnerTemp,
-                                     const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures) {
+//void photon::addTemperatureDecoupled(int number_of_species,
+//                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &cumulEner,
+//                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
+//                                     double cellVolumes,
+//                                     std::vector<std::vector<std::vector<std::vector<double>>>> &temperatures,
+//                                     const std::vector<double> &dbTemp,
+//                                     const std::vector<std::vector<double>> &dbLogEnerTemp,
+//                                     const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures) {
+void photon::addTemperatureDecoupled(int number_of_species, double cellVolumes,
+                                     std::vector<dust_species>& dust_species_information) {
     int ix = this->grid_position[0];
     int iy = this->grid_position[1];
     int iz = this->grid_position[2];
     double cumen;
     for (int iSpec = 0; iSpec < number_of_species; ++iSpec) {
         //TODO : Obtener cumulEner de la especie ispec y densidad en ispec y cell
-        cumen = cumulEner[iSpec][iz][iy][ix] / (densities[iSpec][iz][iy][ix] * cellVolumes);
+        //cumen = cumulEner[iSpec][iz][iy][ix] / (densities[iSpec][iz][iy][ix] * cellVolumes);
+        cumen = dust_species_information[iSpec].get_cumulative_energy()[iz][iy][ix] / dust_species_information[iSpec].get_densities()[iz][iy][ix]*cellVolumes;
         //TODO : Este vector inicia en 0 para cada especie en el objeto de polvo...
         //TODO : Hay que cachar si puedo cargar en cada protón y luego sumar todo o depende de las temps anteriores
         //const std::vector<double>& dbTemp, std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures, double energy, int iSpec
-        temperatures[iSpec][iz][iy][ix] = this->computeDusttempEnergyBd(dbTemp, dbLogEnerTemp, dbEnerTemp,
-                                                                        number_of_temperatures, cumen, iSpec);
+        //TODO : VAMOS ACA
+        //temperatures[iSpec][iz][iy][ix] = this->computeDusttempEnergyBd(dbTemp, dbLogEnerTemp, dbEnerTemp,
+        //                                                               number_of_temperatures, cumen, iSpec);
         //dustTemperature->temperatures[iSpec][iz][iy][ix] = computeDusttempEnergyBd(emissivityDb, cumen, iSpec);
     }
 }
@@ -471,9 +464,11 @@ double photon::computeDusttempEnergyBd(const std::vector<double> &dbTemp,
     return tempReturn;
 }
 
-void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<double> &star_energies,
-                                  const std::vector<std::vector<std::vector<std::vector<double>>>> &density,
-                                  const std::vector<std::vector<double>> &kappa_A) {
+//void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<double> &star_energies,
+//                                  const std::vector<std::vector<std::vector<std::vector<double>>>> &density,
+//                                  const std::vector<std::vector<double>> &kappa_A) {
+void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<star>& star_information,
+                                  const std::vector<dust_species>& dust_specie_information){
     //printf("in divideAbsorvedEnergy\n");
     int ix = this->grid_position[0];
     int iy = this->grid_position[1];
@@ -481,24 +476,25 @@ void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<doubl
     double alphaA = 0;
     if (number_of_species == 1) {
         //TODO : Obtener energia de la estrella
-        this->enerPart[0] = star_energies[this->star_source];
+        this -> enerPart[0] = star_information[this -> star_source].get_energy();
+        //this->enerPart[0] = star_energies[this->star_source];
     } else {
         for (int i = 0; i < number_of_species; ++i) {
             //TODO : Obtener densidad de la especie i
-            this->enerPart[i] = density[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
+            this -> enerPart[i] = dust_specie_information[i].get_densities()[iz][iy][ix] * dust_specie_information[i] .get_kappa_absorption_interpoled()[this -> ray_inu];
+            //this->enerPart[i] = density[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
             //photon->enerPart[i] = dustDensity->densities[i][iz][iy][ix] * dustOpacity->kappaA[i][photon->iFrequency];
             alphaA += this->enerPart[i];
         }
         for (int i = 0; i < number_of_species; ++i) {
-            this->enerPart[i] = star_energies[this->star_source] * this->enerPart[i] / alphaA;
+            this -> enerPart[i] = star_information[this -> star_source].get_energy() * this -> enerPart[i] / alphaA;
+            //this->enerPart[i] = star_energies[this->star_source] * this->enerPart[i] / alphaA;
         }
     }
 }
 
-void photon::getHenveyGreensteinDirection(const std::vector<double> &g) {
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
+void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                          const std::vector<double> &g) {
     int valuesOrientations[3] = {0, 1, 1};
     double newx, newy, newz;
     double temp, g2, sign;
@@ -513,7 +509,7 @@ void photon::getHenveyGreensteinDirection(const std::vector<double> &g) {
     double rnZ = 0.5;
 
     while (rnX != 0.5) {
-        rnX = dis(gen);
+        rnX = uniform_zero_one_distribution(generator);
     }
 
     newx = 2 * rnX - 1.0;
@@ -527,8 +523,8 @@ void photon::getHenveyGreensteinDirection(const std::vector<double> &g) {
 
     float l2 = 2.0;
     while (l2 > 1.0) {
-        rnY = dis(gen);//curand_uniform(&photon->state);
-        rnZ = dis(gen);//curand_uniform(&photon->state);
+        rnY = uniform_zero_one_distribution(generator);//curand_uniform(&photon->state);
+        rnZ = uniform_zero_one_distribution(generator);//curand_uniform(&photon->state);
         newy = 2 * rnY - 1;
         newz = 2 * rnZ - 1;
         l2 = newy * newy + newz * newz;
@@ -585,25 +581,19 @@ void photon::getHenveyGreensteinDirection(const std::vector<double> &g) {
     this->direction[2] = newz;
 }
 
-int photon::find_specie_to_scattering(int number_of_species) {
+int photon::find_specie_to_scattering(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                      int number_of_species) {
 
-    //TODO : Esto pareciera ser general a todos los fotones, si es el caso, dejarlo en la clase superior
     this->cumulative_alpha[0] = 0.0;
-
     for (int i = 0; i < number_of_species; ++i) {
         this->cumulative_alpha[i + 1] = this->cumulative_alpha[i] + this->alpha_S_specie[i];
     }
     for (int i = 0; i < number_of_species; ++i) {
         this->cumulative_alpha[i] = this->cumulative_alpha[i] / this->cumulative_alpha[number_of_species];
     }
-
     this->cumulative_alpha[number_of_species] = 1.0;
 
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-
-    double rn = dis(gen);
+    double rn = uniform_zero_one_distribution(generator);
     int iSpec = common::hunt(this->cumulative_alpha, number_of_species + 1, (double) rn, number_of_species / 2);
     return iSpec;
 

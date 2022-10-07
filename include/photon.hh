@@ -42,8 +42,9 @@ public:
 
     photon();
 
-    photon(int number_of_species, int number_of_stars, int number_of_frequencies,
-            const std::vector<double> &luminosities_cum, const std::vector<star>& star_information);
+    photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+           int number_of_species, int number_of_stars, int number_of_frequencies,
+           const std::vector<double> &luminosities_cum, const std::vector<star>& star_information);
 
     int get_star_source(void);
 
@@ -51,15 +52,17 @@ public:
 
     ~photon(void);
 
-    void get_tau_path();
+    void get_tau_path(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution);
 
-    void get_random_frequency_inu(const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies);
+    void get_random_frequency_inu(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                  const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies);
 
     void chek_unity_vector(double x, double y, double z);
 
-    void get_random_direction();
+    void get_random_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution);
 
-    void identify_star(int number_of_stars, const std::vector<double> &luminosities_cum);
+    void identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                       int number_of_stars, const std::vector<double> &luminosities_cum);
 
     void is_on_grid(int number_of_points_x, int number_of_points_y, int number_of_points_z);
 
@@ -68,9 +71,11 @@ public:
                                         const std::vector<dust_species>& dust_species_information);
 
 
-    int find_specie_to_scattering(int number_of_species);
+    int find_specie_to_scattering(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                  int number_of_species);
 
-    void getHenveyGreensteinDirection(const std::vector<double> &g);
+    void get_henvey_greenstein_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                      const std::vector<double> &g);
 
     int found_point(double x, std::string type, int number_of_points, double difference);
 
@@ -81,23 +86,16 @@ public:
 
     bool get_is_scattering_condition();
 
-    void divideAbsorvedEnergy(int number_of_species, const std::vector<double> &star_energies,
-                              const std::vector<std::vector<std::vector<std::vector<double>>>> &density,
-                              const std::vector<std::vector<double>> &kappa_A);
+    void divideAbsorvedEnergy(int number_of_species, const std::vector<star>& star_information,
+                              const std::vector<dust_species>& dust_specie_information);
 
     double advance_next_position(int number_of_points_X, int number_of_points_Y, int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
                                  const std::vector<double> &grid_cell_walls_y,
                                  const std::vector<double> &grid_cell_walls_z);
 
 
-    void addTemperatureDecoupled(int number_of_species,
-                                 const std::vector<std::vector<std::vector<std::vector<double>>>> &cumulEner,
-                                 const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
-                                 double cellVolumes,
-                                 std::vector<std::vector<std::vector<std::vector<double>>>> &temperatures,
-                                 const std::vector<double> &dbTemp,
-                                 const std::vector<std::vector<double>> &dbLogEnerTemp,
-                                 const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures);
+    void addTemperatureDecoupled(int number_of_species, double cellVolumes,
+                                 std::vector<dust_species>& dust_species_information);
 
     double
     computeDusttempEnergyBd(const std::vector<double> &dbTemp, const std::vector<std::vector<double>> &dbLogEnerTemp,

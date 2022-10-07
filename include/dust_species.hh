@@ -117,6 +117,8 @@ public:
 
     void add_energy(int pos_X, int pos_Y, int pos_Z, double add_tmp);
 
+    const std::vector<std::vector<std::vector<double>>> &get_cumulative_energy() const;
+
     //Empty destructor
     ~dust_species(void);
 

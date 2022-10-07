@@ -2,6 +2,8 @@
 #define RADMC_MONTE_CARLO_HH
 
 #include <map>
+#include <vector>
+#include <random>
 
 #include <common.hh>
 #include <grid.hh>

@@ -5,6 +5,10 @@ monte_carlo::monte_carlo(void) {
 }
 
 void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
+    //TODO : Cómo determinamos el scattering mode???
+    //TODO : RADMC original toma las decisiones a partir de los datos de entrada, creo que prefiero consultarlo
+    //TODO : como una entrada o en el radmc3d.inp
+    int scattering_mode;
     //At first, we read the main radmc3d.inp file. This file contains several information about the simulation
     //  and its parameters
     std::map<std::string,double> simulation_parameters = read_main_file();
@@ -42,20 +46,36 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     this -> emissivity_object.compute_derivate(this -> dust_object.get_number_of_dust_species(),simulation_parameters["ntemp"],this -> frequencies_object.get_mean_intensity());
     //With this, we end the setup process, and we proceed to run the photons
     // *********************** SIMULATION LOGIC *************************
-    //We start by setting up the photons
+    //First, we initialize the random number generators
+    // Will be used to obtain a seed for the random number engine
+    std::random_device rd;
+    // Standard mersenne_twister_engine seeded with rd()
+    std::mt19937 generator(rd());
+    //We create a uniform distribution bewteen 0 and 1. With this, we are going to
+    //generate random number in that distribution in order to obtain
+    //the star source, the photon frequency, the tau path and the scattering status of each photon
+    std::uniform_real_distribution<> uniform_zero_one_distribution(0.0, 1.0);
+
+    //Now we set up the photons
+
 
     /*
-    this -> photons.assign(simulation_parameters["nphot"],photon(this -> dust_object.get_number_of_dust_species(),
+    this -> photons.assign(simulation_parameters["nphot"],photon(generator,
+                                                                 uniform_zero_one_distribution,
+                                                                 this -> dust_object.get_number_of_dust_species(),
                                                                  this -> stars_object.get_number_of_stars(),
                                                                  this -> frequencies_object.get_number_frequency_points(),
                                                                  this -> stars_object.get_cumulative_luminosity(),
                                                                  this -> stars_object.get_stars_information()));
 
     */
+
     this -> photons.resize(simulation_parameters["nphot"]);
     //for (int i = 0; i < this -> photons.size(); ++i) {
     for (int i = 0; i < 10; ++i) {
-        this -> photons[i] = photon(this -> dust_object.get_number_of_dust_species(),
+        this -> photons[i] = photon(generator,
+                                    uniform_zero_one_distribution,
+                                    this -> dust_object.get_number_of_dust_species(),
                             this -> stars_object.get_number_of_stars(),
                             this -> frequencies_object.get_number_frequency_points(),
                             this -> stars_object.get_cumulative_luminosity(),
@@ -72,7 +92,61 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                                            this -> grid_object.get_x_points(),
                                            this -> grid_object.get_y_points(),
                                            this -> grid_object.get_z_points());
+        //While the photon is on the grid
+        while(this -> photons[i].get_on_grid_condition()){
+            //We need to do a scattering event...
+            if(this -> photons[i].get_is_scattering_condition()){
+                //If we do a scattering event, we need to know the type of scattering
+                if(scattering_mode == 1){
+                    this -> photons[i].get_random_direction(generator,uniform_zero_one_distribution);
+                }
+                if(scattering_mode == 2){
+                    int scattering_specie = this -> photons[i].find_specie_to_scattering(generator,uniform_zero_one_distribution,this -> dust_object.get_number_of_dust_species());
+                    this -> photons[i].get_henvey_greenstein_direction(generator,uniform_zero_one_distribution,this -> dust_object.get_dust_species()[scattering_specie].get_g_interpoled());
+                }
+            }
+            //Or an absorption event
+            else{
+                //TODO : VAMOS ACA
+                //this -> photons[i].do_absorption_event();
+                this -> photons[i].get_random_direction(generator,uniform_zero_one_distribution);
+            }
+            this -> photons[i].get_tau_path(generator,uniform_zero_one_distribution);
+            this -> photons[i].walk_next_event(this -> dust_object.get_number_of_dust_species(),
+                                               this -> dust_object.get_dust_species_to_change(),
+                                               this -> stars_object.get_stars_information(),
+                                               this -> grid_object.get_number_of_points_X(),
+                                               this -> grid_object.get_number_of_points_Y(),
+                                               this -> grid_object.get_number_of_points_Z(),
+                                               this -> grid_object.get_x_points(),
+                                               this -> grid_object.get_y_points(),
+                                               this -> grid_object.get_z_points());
+        }
     }
+
+    /*
+    void photon::walk_full_path(){
+        this -> walk_next_event();
+        while (this -> on_grid){
+            if (this -> is_scattering){
+                if(scattering_mode == 1){
+                    this -> get_random_direction();
+                }
+                else if (scattering_mode == 2){
+                    int specie = this -> find_specie_to_scattering();
+                    this -> getHenveyGreensteinDirection();
+                }
+            }
+            else{
+                this -> do_absoprtion_event();
+                this -> get_random_direction();
+            }
+            this -> get_tau_path();
+            this -> walk_next_event();
+        }
+    }
+*/
+
 }
 
 std::map<std::string,double> monte_carlo::read_main_file(void){
