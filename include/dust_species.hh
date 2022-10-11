@@ -119,9 +119,12 @@ public:
 
     const std::vector<std::vector<std::vector<double>>> &get_cumulative_energy() const;
 
+    const std::vector<std::vector<std::vector<double>>> &get_temperature() const;
+
     //Empty destructor
     ~dust_species(void);
 
+    void set_temperature_at_position(int ix, int iy, int iz, double temperature);
 };
 
 #endif //RADMC_DUST_SPECIES_HH

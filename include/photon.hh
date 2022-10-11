@@ -95,28 +95,25 @@ public:
 
 
     void addTemperatureDecoupled(int number_of_species, double cellVolumes,
-                                 std::vector<dust_species>& dust_species_information);
+                                 std::vector<dust_species>& dust_species_information,
+                                 const std::vector<double> &dbTemp,
+                                 const std::vector<std::vector<double>> &dbLogEnerTemp,
+                                 const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures);
 
     double
     computeDusttempEnergyBd(const std::vector<double> &dbTemp, const std::vector<std::vector<double>> &dbLogEnerTemp,
                             const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
                             double energy, int iSpec);
 
-    void pickRandomFreqDb(int number_of_frequencies, int number_of_species, int number_of_temperatures,
+    void pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
+                          int number_of_frequencies, int number_of_species, int number_of_temperatures,
                           const std::vector<double> &dbTemp,
                           const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
 
-    void
-    do_absorption_event(int number_of_species, std::vector<std::vector<std::vector<std::vector<double>>>> &temperatures,
-                        const std::vector<std::vector<std::vector<std::vector<double>>>> &cumulEner,
-                        const std::vector<std::vector<std::vector<std::vector<double>>>> &densities, double cellVolumes,
-                        const std::vector<double> &star_energies, const std::vector<std::vector<double>> &kappa_A,
-                        const std::vector<double> &dbTemp, const std::vector<std::vector<double>> &dbLogEnerTemp,
-                        const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
-                        int number_of_frequencies, const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
+
 
     void
-    walk_next_event(int number_of_species, std::vector<dust_species>& dust_species_information,
+    walk_next_event(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distributionint, int number_of_species, std::vector<dust_species>& dust_species_information,
                     const std::vector<star>& stars_information, int number_of_points_X, int number_of_points_Y, int number_of_points_Z,
                     const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
                     const std::vector<double> &grid_cell_walls_z);
@@ -124,6 +121,14 @@ public:
     const std::vector<double> &getRayPosition() const;
 
     void setGridPosition(const std::vector<int> &gridPosition);
+
+    void do_absorption_event(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_real_distribution,
+                             int number_of_species, std::vector<dust_species> &dust_species_information,
+                             const std::vector<star> &star_information, const std::vector<double> &dbTemp,
+                             const std::vector<std::vector<double>> &dbLogEnerTemp,
+                             const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
+                             int number_of_frequencies, double cellVolumes,
+                             const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
 };
 
 

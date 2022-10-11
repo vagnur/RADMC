@@ -67,9 +67,12 @@ public:
     int get_number_of_points_Y() const;
     int get_number_of_points_Z() const;
 
+
+
     //Destructor of the class
     ~grid(void);
 
+    double get_cell_volume() const;
 };
 
 #endif //RADMC_GRID_HH

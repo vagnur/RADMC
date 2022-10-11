@@ -116,6 +116,10 @@ int grid::get_number_of_points_Z() const {
     return this -> number_of_points_z;
 }
 
+double grid::get_cell_volume() const{
+    return this -> diference_x;
+}
+
 grid::~grid(void){
     ;
 }

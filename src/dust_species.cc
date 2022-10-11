@@ -118,3 +118,11 @@ void dust_species::add_energy(int pos_X, int pos_Y, int pos_Z, double add_tmp) {
 const std::vector<std::vector<std::vector<double>>> &dust_species::get_cumulative_energy() const {
     return this -> cumulative_energy;
 }
+
+const std::vector<std::vector<std::vector<double>>> &dust_species::get_temperature() const{
+    return this -> temperatures;
+};
+
+void dust_species::set_temperature_at_position(int ix, int iy, int iz, double temperature){
+    this -> temperatures[iz][iy][ix] = temperature;
+}

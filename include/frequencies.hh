@@ -9,7 +9,7 @@
 
 
 /*
- * This class represent the frequencies present in the simulation that are readed from the "wavelength_micron.inp"
+ * This class represent the frequencies present in the simulation that are read from the "wavelength_micron.inp"
  * It's going to store the frequencies and the methods are associated with the procurement of the information
  * and the data transformation
  */

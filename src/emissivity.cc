@@ -13,14 +13,15 @@ void emissivity::generate_emissivity_table(std::map<std::string,double>& simulat
     //Variable to store the precalculated temperature of each iteration
     double precalculated_temperature;
     //Then we create a vector to contain the precalculated temperatures
-    std::vector<double> db_temp(ntemp);
+    this -> db_temp.resize(ntemp);
+    //std::vector<double> db_temp(ntemp);
     double x,y;
     for (int i = 0; i < ntemp; ++i) {
         //TODO : Preguntar formula de esto
         x = temp1/temp0;
         y = i/(ntemp-1.0);
         precalculated_temperature = temp0 * std::pow(x,y);
-        db_temp[i] = precalculated_temperature;
+        this -> db_temp[i] = precalculated_temperature;
     }
     double demis;
     std::vector<double> fnu_diff;
@@ -35,7 +36,7 @@ void emissivity::generate_emissivity_table(std::map<std::string,double>& simulat
         //And over each temperature
         for (int j = 0; j < ntemp; ++j) {
             //TODO : Preguntar por este evento
-            fnu_diff = absorption_event(db_temp[j], number_of_frequencies, dust_species_information[i].get_kappa_absorption_interpoled(), freq_nu, freq_dnu);
+            fnu_diff = absorption_event(this -> db_temp[j], number_of_frequencies, dust_species_information[i].get_kappa_absorption_interpoled(), freq_nu, freq_dnu);
             //We stored the last value in the fnu_diff vector, so now we get it
             demis = fnu_diff.back();
             fnu_diff.pop_back();
@@ -115,6 +116,18 @@ emissivity::~emissivity(void){
     ;
 }
 
-const std::vector<std::vector<std::vector<double>>> &emissivity::getDbCumulnorm() const {
-    return db_cumulnorm;
+const std::vector<double>& emissivity::get_db_temp() const{
+    return this -> db_temp;
+}
+
+const std::vector<std::vector<double>>& emissivity::get_db_enertemp() const{
+    return this -> db_enertemp;
+}
+
+const std::vector<std::vector<double>>& emissivity::get_db_logenertemp() const{
+    return this -> db_logenertemp;
+}
+
+const std::vector<std::vector<std::vector<double>>>& emissivity::get_db_cumulnorm() const{
+    return this -> db_cumulnorm;
 }

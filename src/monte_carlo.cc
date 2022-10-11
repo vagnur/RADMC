@@ -8,7 +8,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //TODO : Cómo determinamos el scattering mode???
     //TODO : RADMC original toma las decisiones a partir de los datos de entrada, creo que prefiero consultarlo
     //TODO : como una entrada o en el radmc3d.inp
-    int scattering_mode;
+    int scattering_mode = 1;
     //At first, we read the main radmc3d.inp file. This file contains several information about the simulation
     //  and its parameters
     std::map<std::string,double> simulation_parameters = read_main_file();
@@ -57,33 +57,25 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     std::uniform_real_distribution<> uniform_zero_one_distribution(0.0, 1.0);
 
     //Now we set up the photons
-
-
-    /*
-    this -> photons.assign(simulation_parameters["nphot"],photon(generator,
-                                                                 uniform_zero_one_distribution,
-                                                                 this -> dust_object.get_number_of_dust_species(),
-                                                                 this -> stars_object.get_number_of_stars(),
-                                                                 this -> frequencies_object.get_number_frequency_points(),
-                                                                 this -> stars_object.get_cumulative_luminosity(),
-                                                                 this -> stars_object.get_stars_information()));
-
-    */
-
+    //TODO : Cambiar la logica del programa
+    //TODO : El foton sólo debería tener atributos, no métodos (o al menos no todos los métodos considerados hasta ahora)
     this -> photons.resize(simulation_parameters["nphot"]);
     //for (int i = 0; i < this -> photons.size(); ++i) {
     for (int i = 0; i < 10; ++i) {
+        //TODO : New lleva el objeto al heap. Acorde a lo leído, el heap tiene más espacio, pero es necesario borrar
         this -> photons[i] = photon(generator,
                                     uniform_zero_one_distribution,
                                     this -> dust_object.get_number_of_dust_species(),
-                            this -> stars_object.get_number_of_stars(),
-                            this -> frequencies_object.get_number_frequency_points(),
-                            this -> stars_object.get_cumulative_luminosity(),
-                            this -> stars_object.get_stars_information());
+                                    this -> stars_object.get_number_of_stars(),
+                                    this -> frequencies_object.get_number_frequency_points(),
+                                    this -> stars_object.get_cumulative_luminosity(),
+                                    this -> stars_object.get_stars_information());
         //TODO : calcular la posición del foton respecto a la pos del rasho
         this -> photons[i].setGridPosition(this -> grid_object.found_point_cartesian_regular(this -> photons[i].getRayPosition()));
-        //TODO : Acá inicia el ciclo del camino copmpleto, es saltar al sgte evento y verificar si estamos dentro de la grilla. Si está, hacer los eventos relacionados
-        this -> photons[i].walk_next_event(this -> dust_object.get_number_of_dust_species(),
+        //TODO : Acá inicia el ciclo del camino completo, es saltar al sgte evento y verificar si estamos dentro de la grilla. Si está, hacer los eventos relacionados
+        this -> photons[i].walk_next_event(generator,
+                                           uniform_zero_one_distribution,
+                                           this -> dust_object.get_number_of_dust_species(),
                                            this -> dust_object.get_dust_species_to_change(),
                                            this -> stars_object.get_stars_information(),
                                            this -> grid_object.get_number_of_points_X(),
@@ -107,12 +99,24 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
             }
             //Or an absorption event
             else{
-                //TODO : VAMOS ACA
-                //this -> photons[i].do_absorption_event();
+                this -> photons[i].do_absorption_event(generator,
+                                                       uniform_zero_one_distribution,
+                                                       this -> dust_object.get_number_of_dust_species(),
+                                                       this -> dust_object.get_dust_species_to_change(),
+                                                       this -> stars_object.get_stars_information(),
+                                                       this -> emissivity_object.get_db_temp(),
+                                                       this -> emissivity_object.get_db_logenertemp(),
+                                                       this -> emissivity_object.get_db_enertemp(),
+                                                       simulation_parameters["ntemp"],
+                                                       this -> frequencies_object.get_number_frequency_points(),
+                                                       this -> grid_object.get_cell_volume(),
+                                                       this -> emissivity_object.get_db_cumulnorm());
                 this -> photons[i].get_random_direction(generator,uniform_zero_one_distribution);
             }
             this -> photons[i].get_tau_path(generator,uniform_zero_one_distribution);
-            this -> photons[i].walk_next_event(this -> dust_object.get_number_of_dust_species(),
+            this -> photons[i].walk_next_event(generator,
+                                               uniform_zero_one_distribution,
+                                               this -> dust_object.get_number_of_dust_species(),
                                                this -> dust_object.get_dust_species_to_change(),
                                                this -> stars_object.get_stars_information(),
                                                this -> grid_object.get_number_of_points_X(),
