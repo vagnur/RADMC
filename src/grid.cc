@@ -117,7 +117,7 @@ int grid::get_number_of_points_Z() const {
 }
 
 double grid::get_cell_volume() const{
-    return this -> diference_x;
+    return this -> diference_x*diference_y*diference_z;
 }
 
 grid::~grid(void){

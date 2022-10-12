@@ -8,7 +8,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //TODO : Cómo determinamos el scattering mode???
     //TODO : RADMC original toma las decisiones a partir de los datos de entrada, creo que prefiero consultarlo
     //TODO : como una entrada o en el radmc3d.inp
-    int scattering_mode = 1;
+    int scattering_mode = 2;
     //At first, we read the main radmc3d.inp file. This file contains several information about the simulation
     //  and its parameters
     std::map<std::string,double> simulation_parameters = read_main_file();
@@ -51,7 +51,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     std::random_device rd;
     // Standard mersenne_twister_engine seeded with rd()
     std::mt19937 generator(rd());
-    //We create a uniform distribution bewteen 0 and 1. With this, we are going to
+    //We create a uniform distribution between 0 and 1. With this, we are going to
     //generate random number in that distribution in order to obtain
     //the star source, the photon frequency, the tau path and the scattering status of each photon
     std::uniform_real_distribution<> uniform_zero_one_distribution(0.0, 1.0);
@@ -60,8 +60,9 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //TODO : Cambiar la logica del programa
     //TODO : El foton sólo debería tener atributos, no métodos (o al menos no todos los métodos considerados hasta ahora)
     this -> photons.resize(simulation_parameters["nphot"]);
-    //for (int i = 0; i < this -> photons.size(); ++i) {
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < this -> photons.size(); ++i) {
+    //for (int i = 0; i < 10; ++i) {
+        std::cout << "Launching photon: " << i+1 << std::endl;
         //TODO : New lleva el objeto al heap. Acorde a lo leído, el heap tiene más espacio, pero es necesario borrar
         this -> photons[i] = photon(generator,
                                     uniform_zero_one_distribution,
@@ -73,6 +74,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
         //TODO : calcular la posición del foton respecto a la pos del rasho
         this -> photons[i].setGridPosition(this -> grid_object.found_point_cartesian_regular(this -> photons[i].getRayPosition()));
         //TODO : Acá inicia el ciclo del camino completo, es saltar al sgte evento y verificar si estamos dentro de la grilla. Si está, hacer los eventos relacionados
+        std::cout << "walking to the next event" << std::endl;
         this -> photons[i].walk_next_event(generator,
                                            uniform_zero_one_distribution,
                                            this -> dust_object.get_number_of_dust_species(),
@@ -86,8 +88,10 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                                            this -> grid_object.get_z_points());
         //While the photon is on the grid
         while(this -> photons[i].get_on_grid_condition()){
+            std::cout << "The photon " << i + 1 << " is on the grid" << std::endl;
             //We need to do a scattering event...
             if(this -> photons[i].get_is_scattering_condition()){
+                std::cout << "The photon " << i + 1 << " is going to scatter" << std::endl;
                 //If we do a scattering event, we need to know the type of scattering
                 if(scattering_mode == 1){
                     this -> photons[i].get_random_direction(generator,uniform_zero_one_distribution);
@@ -99,6 +103,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
             }
             //Or an absorption event
             else{
+                std::cout << "The photon " << i + 1 << " is going to do absorption" << std::endl;
                 this -> photons[i].do_absorption_event(generator,
                                                        uniform_zero_one_distribution,
                                                        this -> dust_object.get_number_of_dust_species(),
@@ -113,7 +118,9 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                                                        this -> emissivity_object.get_db_cumulnorm());
                 this -> photons[i].get_random_direction(generator,uniform_zero_one_distribution);
             }
+            std::cout << "The photon " << i + 1 << " is generating new tau path" << std::endl;
             this -> photons[i].get_tau_path(generator,uniform_zero_one_distribution);
+            std::cout << "The photon " << i + 1 << " is walking to the next event" << std::endl;
             this -> photons[i].walk_next_event(generator,
                                                uniform_zero_one_distribution,
                                                this -> dust_object.get_number_of_dust_species(),
@@ -127,6 +134,8 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                                                this -> grid_object.get_z_points());
         }
     }
+
+    
 
     /*
     void photon::walk_full_path(){

@@ -22,6 +22,8 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     this->enerCum.resize(number_of_species + 1);
     this->dbCumul.resize(number_of_species + 1);
     this -> cell_walls.resize(3);
+    this -> tempLocal.resize(number_of_species);
+    this -> dbCumul.resize(number_of_frequencies+1);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //Then, we identify the star source of the photon
     this->identify_star(generator,uniform_zero_one_distribution,number_of_stars, luminosities_cum);
@@ -56,7 +58,7 @@ void photon::identify_star(std::mt19937& generator, std::uniform_real_distributi
                            int number_of_stars, const std::vector<double> &luminosities_cum) {
     double star_lum = uniform_zero_one_distribution(generator);
     //TODO : Obtener luminosities cum
-    int star = common::hunt(luminosities_cum, number_of_stars + 1, star_lum, number_of_stars / 2);
+    int star = common::hunt(luminosities_cum, number_of_stars + 1, star_lum, number_of_stars);
     this->star_source = star;
 }
 
@@ -111,7 +113,7 @@ void photon::get_random_direction(std::mt19937& generator, std::uniform_real_dis
 }
 
 void photon::chek_unity_vector(double x, double y, double z) {
-    double module = std::sqrt(x * x + y * y + z * z);
+    double module = std::sqrt((x * x) + (y * y) + (z * z));
     if (std::fabs(module - 1.0) > 1e-6) {
         std::cerr << "ERROR : Error unity vector " << x << " " << y << " " << z << std::endl;
         exit(0);
@@ -121,7 +123,7 @@ void photon::chek_unity_vector(double x, double y, double z) {
 void photon::get_random_frequency_inu(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                                       const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies) {
     double rn = uniform_zero_one_distribution(generator);
-    int ray_inu = common::hunt(star_cumulative_spectrum, number_of_frequencies + 1, rn, number_of_frequencies / 2);
+    int ray_inu = common::hunt(star_cumulative_spectrum, number_of_frequencies + 1, rn, number_of_frequencies);
     this->ray_inu = ray_inu;
 }
 
@@ -173,9 +175,7 @@ void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribu
         //Then we calculate the minor distance to move to the next cell of the grid
         minor_distance = this->advance_next_position(number_of_points_X, number_of_points_Y, number_of_points_Z, grid_cell_walls_x, grid_cell_walls_y,
                                                      grid_cell_walls_z);
-
         this->calculate_opacity_coefficients(minor_distance, number_of_species, dust_specie_information);
-
         if (this->tau_path_gone + this->dtau > this->tau_path_total) {
             fraction = (this->tau_path_total - tau_path_gone) / this->dtau;
 
@@ -204,7 +204,7 @@ void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribu
             double dum = (1.0 - this->albedo) * this->dtau * stars_information[this->star_source].get_energy() / this->alpha_A_total;
             for (int i = 0; i < number_of_species; ++i) {
                 add_tmp = dum * this->alpha_A_specie[i];
-                dust_specie_information[i].add_energy(this -> grid_position[0],this -> grid_position[1],this -> grid_position[2],add_tmp);
+                dust_specie_information[i].add_energy(this -> prev_grid_position[0],this -> prev_grid_position[1],this -> prev_grid_position[2],add_tmp);
                 //cumulative_energy_specie[i][this->grid_position[2]][this->grid_position[1]][this->grid_position[0]] += add_tmp;
             }
             this->tau_path_gone = this->tau_path_gone + this->dtau;
@@ -311,7 +311,6 @@ void photon::do_absorption_event(std::mt19937& generator, std::uniform_real_dist
     int ix = this->grid_position[0];
     int iy = this->grid_position[1];
     int iz = this->grid_position[2];
-    //TODO : VAMOS ACA
     this -> divideAbsorvedEnergy(number_of_species, star_information, dust_species_information);
     this -> addTemperatureDecoupled(number_of_species,cellVolumes,dust_species_information,dbTemp,dbLogEnerTemp,dbEnerTemp,number_of_temperatures);
     for (int i = 0; i < number_of_species; ++i) {
@@ -319,6 +318,7 @@ void photon::do_absorption_event(std::mt19937& generator, std::uniform_real_dist
         //this->tempLocal[i] = temperatures[i][iz][iy][ix];
     }
     this->pickRandomFreqDb(generator, uniform_real_distribution,number_of_frequencies, number_of_species, number_of_temperatures, dbTemp, dbCumulNorm);
+
 }
 
 void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
@@ -334,25 +334,25 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
     int inuPick = 0;
     this->enerCum[0] = 0;
     for (int i = 1; i < (number_of_species + 1); ++i) {
-        this->enerCum[i] = this->enerCum[i - 1] + enerPart[i - 1];
+        this->enerCum[i] = this->enerCum[i - 1] + this -> enerPart[i - 1];
     }
     if (number_of_species > 1) {
         rn = uniform_real_distribution(generator);
-        iSpec = common::hunt(this->enerCum, number_of_species + 1, rn, enerCum[number_of_species / 2]);
+        iSpec = common::hunt(this->enerCum, number_of_species + 1, rn, number_of_species);
         if ((iSpec < 0 || (iSpec > number_of_species - 1))) {
             std::cerr << "ERROR : Specie found out of range ..." << std::endl;
-            exit(0);
+            //exit(0);
             //printf("exit\n");
             //exit(1);
         }
     }
-    iTemp = common::hunt(dbTemp, number_of_temperatures, this->tempLocal[iSpec], dbTemp[number_of_temperatures / 2]);
+    iTemp = common::hunt(dbTemp, number_of_temperatures, this->tempLocal[iSpec], number_of_temperatures);
     double eps = 0.0;
 
     if (iTemp >= number_of_temperatures - 1) {
         //printf("ERROR: Too high temperature discovered\n");
         std::cerr << "ERROR : Too high temperature discovered" << std::endl;
-        exit(0);
+        //exit(0);
     }
     if (iTemp <= -1) {
         iTemp = 0;
@@ -360,7 +360,7 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
         eps = (tempLocal[iSpec] - dbTemp[iTemp]) / (dbTemp[iTemp + 1] - dbTemp[iTemp]);
         if ((eps > 1) || (eps < 0)) {
             std::cerr << "ERROR : In picking new random frequency, eps out of range" << std::endl;
-            exit(0);
+            //exit(0);
             //printf("ERROR: in pick randomFreq, eps<0 or eps>1\n");
             //printf("exit\n");
             //exit(1);
@@ -374,9 +374,10 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
         }
         rn = uniform_real_distribution(generator);
         //rn = 0.20160651049169737;
-        inuPick = common::hunt(this->dbCumul, number_of_frequencies, (double) rn, dbCumul[number_of_frequencies / 2]);
+        inuPick = common::hunt(this->dbCumul, number_of_frequencies, (double) rn, number_of_frequencies);
         //free(dbCumul);
-    } else {
+    }
+    else {
         //Now, within this species/size, find the frequency
         if (eps > 0.5) {
             if (iTemp < number_of_temperatures - 2) {
@@ -386,7 +387,7 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
         rn = uniform_real_distribution(generator);
         //verify dbCumulNorm
         inuPick = common::hunt(dbCumulNorm[iSpec][iTemp - 1], number_of_frequencies, rn,
-                               dbCumulNorm[iSpec][iTemp - 1][number_of_frequencies / 2]);
+                               number_of_frequencies);
     }
     this->ray_inu = inuPick;
 }
@@ -415,7 +416,6 @@ void photon::addTemperatureDecoupled(int number_of_species, double cellVolumes,
         //TODO : Este vector inicia en 0 para cada especie en el objeto de polvo...
         //TODO : Hay que cachar si puedo cargar en cada protón y luego sumar todo o depende de las temps anteriores
         //const std::vector<double>& dbTemp, std::vector<std::vector<double>>& dbLogEnerTemp, const std::vector<std::vector<double>>& dbEnerTemp, int number_of_temperatures, double energy, int iSpec
-        //TODO : VAMOS ACA
         temperature = this ->computeDusttempEnergyBd(dbTemp, dbLogEnerTemp, dbEnerTemp, number_of_temperatures, cumen,iSpec);
         dust_species_information[iSpec].set_temperature_at_position(ix,iy,iz,temperature);
         //temperatures[iSpec][iz][iy][ix] = this->computeDusttempEnergyBd(dbTemp, dbLogEnerTemp, dbEnerTemp,
@@ -434,7 +434,7 @@ double photon::computeDusttempEnergyBd(const std::vector<double> &dbTemp,
     double logEner = std::log(energy);
     double eps;
     //TODO : Obtener dblogenergtemp de la especie
-    itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, (double) logEner, number_of_temperatures / 2);
+    itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, logEner, number_of_temperatures);
     //printf("itemp=%d\n", *itemp);
     if (itemp >= number_of_temperatures - 1) {
         std::cerr << "ERROR : Too high temperature discovered" << std::endl;
@@ -457,8 +457,8 @@ double photon::computeDusttempEnergyBd(const std::vector<double> &dbTemp,
         eps = (energy - dbEnerTemp[iSpec][itemp]) / (dbEnerTemp[iSpec][itemp + 1] - dbEnerTemp[iSpec][itemp]);
         if ((eps > 1) || (eps < 0)) {
             std::cerr << "ERROR : Temperature found out of range..." << std::endl;
-            printf("exit\n");
-            //exit(1);
+            //printf("exit\n");
+            exit(0);
         }
         //TODO : Obtener dbTemp
         tempReturn = (1.0 - eps) * dbTemp[itemp] + eps * dbTemp[itemp + 1];
@@ -480,7 +480,8 @@ void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<star>
         //TODO : Obtener energia de la estrella
         this -> enerPart[0] = star_information[this -> star_source].get_energy();
         //this->enerPart[0] = star_energies[this->star_source];
-    } else {
+    }
+    else {
         for (int i = 0; i < number_of_species; ++i) {
             //TODO : Obtener densidad de la especie i
             this -> enerPart[i] = dust_specie_information[i].get_densities()[iz][iy][ix] * dust_specie_information[i].get_kappa_absorption_interpoled()[this -> ray_inu];
@@ -526,8 +527,8 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
     while (l2 > 1.0) {
         rnY = uniform_zero_one_distribution(generator);//curand_uniform(&photon->state);
         rnZ = uniform_zero_one_distribution(generator);//curand_uniform(&photon->state);
-        newy = 2 * rnY - 1;
-        newz = 2 * rnZ - 1;
+        newy = 2 * rnY - 1.0;
+        newz = 2 * rnZ - 1.0;
         l2 = newy * newy + newz * newz;
         if (l2 < 0.0001) {
             l2 = 2.0;
@@ -595,7 +596,7 @@ int photon::find_specie_to_scattering(std::mt19937& generator, std::uniform_real
     this->cumulative_alpha[number_of_species] = 1.0;
 
     double rn = uniform_zero_one_distribution(generator);
-    int iSpec = common::hunt(this->cumulative_alpha, number_of_species + 1, (double) rn, number_of_species / 2);
+    int iSpec = common::hunt(this->cumulative_alpha, number_of_species + 1, rn, number_of_species);
     return iSpec;
 
 }

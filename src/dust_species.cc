@@ -126,3 +126,7 @@ const std::vector<std::vector<std::vector<double>>> &dust_species::get_temperatu
 void dust_species::set_temperature_at_position(int ix, int iy, int iz, double temperature){
     this -> temperatures[iz][iy][ix] = temperature;
 }
+
+void dust_species::convert_energy_to_temperature(){
+
+}

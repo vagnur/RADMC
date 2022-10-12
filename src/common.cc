@@ -142,7 +142,7 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
         }
         else{
             //In any other case, we are in the domain of the old points
-            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points/2);
+            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points);
             if(new_points[i] == old_points[0]){
                 //std::cout << "A" << std::endl;
                 new_function[i] = old_function[0];
@@ -184,7 +184,7 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
     for (int i = 0; i < number_of_new_points; ++i) {
         if(((new_points[i] - specie_last_frequency)*(new_points[i] - specie_first_frequency)) < 0.0){
             // Yes, the freq lies within the boundaries.
-            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points/2);
+            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points);
             if(x < 0 || x >= number_of_old_points - 1){
                 std::cerr << "Error in interpolation function" << std::endl;
                 std::cerr << "Hunt function out of range" << std::endl;
