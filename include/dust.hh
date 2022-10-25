@@ -20,6 +20,7 @@
 class dust {
 
 private:
+
     //Metadata from the "dust_density.inp" file
     //The iformat right now is always 1 and there is no further information about this parameter
     int iformat_dust_density;
@@ -62,8 +63,18 @@ public:
     //Output: It has no output, but we are going to store vectors with the relevant information in each dust_specie object.
     void read_opacities(int specie_position, int input_style, std::string specie_name, const std::vector<double>& frequencies);
 
+    //This method is going to call the common methods remap and interpolate of the vectors kappa absorption, kappa scattering and g,
+    //  for the inputted specie.
+    //Input : int specie -> Position of the specie in the main vector dust_species_information (basically, is the specie)
+    //        vector frequencies ->
+    //        int iformat -> This format indicates which vector are considered
+    //Output : it has no output, but each specie is goin to store the remapped vector and the interpoled vector
     void remap_opacities_values(int specie, const std::vector<double>& frequencies, int iformat);
 
+    //This method is going to call a method in each dust specie that is going to initialize the temperature and energy
+    //  vectors in 0.
+    //Input : int number_of_points_<dimension> -> The number of points in each dimension (x,y or z)
+    //Output : it has no output, but each specie is going to store 0 in the temperature and energy vectors
     void initialize_specie_temperature(int number_of_points_x,int number_of_points_y,int number_of_points_z);
 
     //This method is going to convert the frequencies in the input to the corresponding lambda values
@@ -75,6 +86,7 @@ public:
     //Getter for the dust species
     const std::vector<dust_species>& get_dust_species(void) const;
 
+    //Getter for the species but not in const type so we can change things in the vector
     std::vector<dust_species>& get_dust_species_to_change(void);
 
     //Getter for the number of dust species
@@ -83,6 +95,11 @@ public:
     //Empty destructor
     ~dust(void);
 
+    void add_energy_specie(int specie, std::vector<int> grid_position, double add_tmp);
+
+    void set_specie_temperature_at_position(int iSpec, int ix, int iy, int iz, double temperature);
+
+    void set_null_temperature(int iSpecie, int i, int j, int k);
 };
 
 

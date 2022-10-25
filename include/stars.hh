@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <cmath>
+#include <random>
 //In order to make a vector to store the information of each star
 #include <star.hh>
 //In order to execute common functions in this class
@@ -74,6 +75,8 @@ public:
 	~stars(void);
 
     void jitter_stars(std::vector<double> cell_walls_x, std::vector<double> cell_walls_y, std::vector<double> cell_walls_z);
+
+    int identify_star(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution);
 };
 
 #endif //RADMC_STARS_HH

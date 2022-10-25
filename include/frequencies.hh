@@ -6,7 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <common.hh>
-
+#include <random>
 
 /*
  * This class represent the frequencies present in the simulation that are read from the "wavelength_micron.inp"
@@ -53,6 +53,8 @@ public:
     //Destructor of the class
     ~frequencies(void);
 
+    int get_random_frequency(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution,
+                             const std::vector<double> &star_cumulative_spectrum);
 };
 
 #endif //RADMC_FREQUENCIES_HH

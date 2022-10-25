@@ -6,7 +6,7 @@
 
 /*
  * An object of this class represent a dust specie present in the simulation
- * Is going to store the relevant information of each specie, as the name, the ... and the ...
+ * Is going to store the relevant information of each specie, as the name, the frequencies and the scattering relevant information.
  */
 class dust_species {
 
@@ -124,7 +124,10 @@ public:
     //Empty destructor
     ~dust_species(void);
 
+
     void set_temperature_at_position(int ix, int iy, int iz, double temperature);
+
+    void set_null_temperature(int ix, int iy, int iz);
 };
 
 #endif //RADMC_DUST_SPECIES_HH

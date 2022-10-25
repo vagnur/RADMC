@@ -46,6 +46,10 @@ public:
            int number_of_species, int number_of_stars, int number_of_frequencies,
            const std::vector<double> &luminosities_cum, const std::vector<star>& star_information);
 
+    photon(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution,
+           int number_of_species, int number_of_frequencies, int star_source, int ray_inu,
+           const std::vector<double> &star_ray_position);
+
     int get_star_source(void);
 
     void set_star_source(int star_source);
@@ -129,6 +133,48 @@ public:
                              const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
                              int number_of_frequencies, double cellVolumes,
                              const std::vector<std::vector<std::vector<double>>> &dbCumulNorm);
+
+    void set_ray_position(std::vector<double> star_ray_position);
+
+    void set_prev_ray_position();
+
+    void set_prev_grid_position();
+
+    double get_dtau();
+
+    double get_tau_path_total();
+
+    double get_tau_path_gone();
+
+    void update_ray_position(double fraction);
+
+    double get_albedo();
+
+    double get_alpha_A_total();
+
+    const std::vector<double> &get_alpha_A_specie() const;
+
+    const std::vector<int> &get_grid_position() const;
+
+    void update_tau_path_gone();
+
+    void set_scattering_state(double rn);
+
+    int get_ray_inu() const;
+
+    void set_ener_part(const std::vector<double> &ener_part);
+
+    void set_temp_local(const std::vector<double> &temp_local);
+
+    const std::vector<double> &get_ener_part() const;
+
+    const std::vector<double> &get_ener_cum() const;
+
+    const std::vector<double> &get_temp_local() const;
+
+    void set_ray_inu(int ray_inu);
+
+    const std::vector<int> &get_prev_grid_position() const;
 };
 
 

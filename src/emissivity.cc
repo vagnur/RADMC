@@ -10,6 +10,9 @@ void emissivity::generate_emissivity_table(std::map<std::string,double>& simulat
     int ntemp = simulation_parameters["ntemp"];
     double temp0 = simulation_parameters["temp0"];
     double temp1 = simulation_parameters["temp1"];
+    this -> number_of_temperatures = ntemp;
+    this -> temp0 = temp0;
+    this -> temp1 = temp1;
     //Variable to store the precalculated temperature of each iteration
     double precalculated_temperature;
     //Then we create a vector to contain the precalculated temperatures
@@ -25,12 +28,12 @@ void emissivity::generate_emissivity_table(std::map<std::string,double>& simulat
     }
     double demis;
     std::vector<double> fnu_diff;
-    //This vector is going to store the precalculated temperatures
+    //This vector is going to store the precalculated temperatures for each specie
     this -> db_enertemp.resize(number_of_species, std::vector<double> (ntemp, 0));
     //This vector is going to store the logarithmic temperature
     this -> db_logenertemp.resize(number_of_species, std::vector<double> (ntemp,0));
-    //This vector is going to store the emissivity of each specie at each temperature
-    this -> db_emiss.resize(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(ntemp,0)));
+    //This vector is going to store the emissivity of each specie, at each temperature and at each frequency
+    this -> db_emiss.resize(number_of_species, std::vector<std::vector<double>> (ntemp,std::vector<double>(number_of_frequencies,0)));
     //We iterate over each dust specie
     for (int i = 0; i < number_of_species; ++i) {
         //And over each temperature
@@ -55,7 +58,7 @@ void emissivity::compute_derivate(int number_of_species, int number_of_temperatu
     std::vector<double> diffemis(number_of_frequencies);
     //This vector is going to store the cumulative value of the calculated derivative
     std::vector<double> db_cumul(number_of_frequencies + 1);
-    //In this cube, we are going to store the normal cumulative value of the derivative for each specie at each temperature
+    //In this cube, we are going to store the normal cumulative value of the derivative for each specie, at each temperature and at each frequency
     this -> db_cumulnorm.resize(number_of_species,std::vector<std::vector<double>>(number_of_temperatures,std::vector<double>(number_of_frequencies+1,0)));
     //This vector is going to store the cumulative normal value for a specific specie at a specific temperature
     std::vector<double> db_cumulnorm_values(number_of_frequencies+1);
@@ -110,6 +113,51 @@ std::vector<double> emissivity::absorption_event(double temp, int number_of_freq
     demis = demis * fourpi;
     fnu_diff[number_of_frequencies] = demis;
     return fnu_diff;
+}
+
+double emissivity::compute_dust_temp_energy(double energy, int iSpec){
+    double tempReturn = 0.0;
+    int itemp = 0;
+    double logEner = std::log(energy);
+    double eps;
+    //TODO : Obtener dblogenergtemp de la especie
+    itemp = common::hunt(this -> db_logenertemp[iSpec], this -> number_of_temperatures, logEner, this -> number_of_temperatures);
+    //itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, logEner, number_of_temperatures);
+    //printf("itemp=%d\n", *itemp);
+    if (itemp >= this -> number_of_temperatures - 1) {
+        std::cout << "aca 1" << std::endl;
+        std::cerr << "ERROR : Too high temperature discovered" << std::endl;
+        exit(0);
+    }
+
+    if (itemp <= -1) {
+        //Temperature presumably below lowest temp in dbase
+        //TODO : Obtener enertemp de la especie
+        //eps = energy / dbEnerTemp[iSpec][0];
+        eps = energy / db_enertemp[iSpec][0];
+        if (eps >= 1) {
+            //printf("exit\n");
+            //exit(1);
+            std::cout << "aca 2" << std::endl;
+            std::cerr << "ERROR : Too high temperature discovered" << std::endl;
+            exit(0);
+        }
+        //tempReturn = eps * dbTemp[0];
+        tempReturn = eps * this -> db_temp[0];
+    } else {
+        //TODO : Obtener enertemp de la especie
+        //eps = (energy - dbEnerTemp[iSpec][itemp]) / (dbEnerTemp[iSpec][itemp + 1] - dbEnerTemp[iSpec][itemp]);
+        eps = (energy - this -> db_enertemp[iSpec][itemp]) / (this -> db_enertemp[iSpec][itemp + 1] - this -> db_enertemp[iSpec][itemp]);
+        if ((eps > 1) || (eps < 0)) {
+            std::cerr << "ERROR : Temperature found out of range..." << std::endl;
+            //printf("exit\n");
+            exit(0);
+        }
+        //TODO : Obtener dbTemp
+        //tempReturn = (1.0 - eps) * dbTemp[itemp] + eps * dbTemp[itemp + 1];
+        tempReturn = (1.0 - eps) * this -> db_temp[itemp] + eps * db_temp[itemp + 1];
+    }
+    return tempReturn;
 }
 
 emissivity::~emissivity(void){

@@ -14,7 +14,8 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
     //In order to iterate over the vectors, we need to know the step, the start and the end of each vector (old and new)
     int old_step,old_start,old_end;
     int new_step,new_start,new_end;
-    //This values are used in the logarithmic interpolation
+    int hunted_value;
+    //These values are used in the logarithmic interpolation
     double x,y;
     //First, we need to know if the old points and the new points are ascending or descending.
     //Since this are monotonic functions, we need to compare only 2 points
@@ -142,7 +143,7 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
         }
         else{
             //In any other case, we are in the domain of the old points
-            x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points);
+            hunted_value = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points);
             if(new_points[i] == old_points[0]){
                 //std::cout << "A" << std::endl;
                 new_function[i] = old_function[0];
@@ -152,19 +153,19 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
                 new_function[i] = old_function[number_of_old_points - 1];
             }
             else{
-                if((x < 0) || (x >= number_of_old_points - 1)){
+                if((hunted_value < 0) || (hunted_value >= number_of_old_points - 1)){
                     std::cerr << "Error in remaping function" << std::endl;
                     std::cerr << "Hunt function out of range" << std::endl;
                     exit(0);
                 }
-                y = (new_points[i] - old_points[x]) / (old_points[x+1] - old_points[x]);
-                if((old_function[x] > 0) && (old_function[x+1] > 0)){
+                y = (new_points[i] - old_points[hunted_value]) / (old_points[hunted_value+1] - old_points[hunted_value]);
+                if((old_function[hunted_value] > 0) && (old_function[hunted_value+1] > 0)){
                     //std::cout << "C" << std::endl;
-                    new_function[i] = std::exp((1.0 - y)*std::log(old_function[x])+y*std::log(old_function[x+1]));
+                    new_function[i] = std::exp((1.0 - y)*std::log(old_function[hunted_value])+y*std::log(old_function[hunted_value+1]));
                 }
                 else{
                     //std::cout << "D" << std::endl;
-                    new_function[i] = ((1-y)*old_function[x])+(y*old_function[x+1]);
+                    new_function[i] = ((1-y)*old_function[hunted_value])+(y*old_function[hunted_value+1]);
                 }
             }
         }
@@ -173,17 +174,17 @@ std::vector<double> common::remap_function(int number_of_old_points, std::vector
     return new_function;
 }
 
-std::vector<double> common::interpolation_function(std::vector<double> old_function, std::vector<double> old_points, int number_of_old_points, std::vector<double> new_points, int number_of_new_points, std::vector<double> remmaped){
+std::vector<double> common::interpolation_function(std::vector<double> old_function, std::vector<double> old_points, int number_of_old_points, std::vector<double> new_points, int number_of_new_points, std::vector<double> remapped){
     //double find_dust_kappa_interpol = 0.0;
     std::vector<double> new_function(number_of_new_points);
     double specie_last_frequency = old_points.back();
     double specie_first_frequency = old_points[0];
-    double x,eps=-1.0;
-    int inumax, inumin,inu=-1;
+    double eps=-1.0;
+    int inumax, inumin,inu=-1,x;
     double margin = 1e-4;
     for (int i = 0; i < number_of_new_points; ++i) {
         if(((new_points[i] - specie_last_frequency)*(new_points[i] - specie_first_frequency)) < 0.0){
-            // Yes, the freq lies within the boundaries.
+            // Yes, the frequencies lies within the boundaries.
             x = hunt(old_points,number_of_old_points,new_points[i],number_of_old_points);
             if(x < 0 || x >= number_of_old_points - 1){
                 std::cerr << "Error in interpolation function" << std::endl;
@@ -198,7 +199,7 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
             new_function[i] = ((1.0 - eps) * old_function[x]) + eps * old_function[x+1];
         }
         else{
-            //The freq is out of range of the original grid
+            //The frequencies are out of range of the original grid
             if(new_points[2] > new_points[1]){
                 inumax = number_of_new_points-1;
                 inumin = 0;
@@ -232,24 +233,23 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
             if(inu >= 0){
                 if(eps < 0.0) eps = 0.0;
                 if(eps > 1.0) eps = 1.0;
-                new_function[i] = eps * remmaped[inu];
+                new_function[i] = eps * remapped[inu];
             }
             else{
                 x = hunt(new_points,number_of_new_points,new_points[i],inu);
-                std::cout << x << std::endl;
                 if(x < 0 || x > number_of_new_points - 1){
                     std::cerr << "Error in interpolation function" << std::endl;
-                    std::cerr << "Hunt function out of range 2" << std::endl;
+                    std::cerr << "Hunt function out of range" << std::endl;
                     exit(0);
                 }
-                new_function[i] = (1.0 - eps) * remmaped[x] + eps * remmaped[x+1];
+                new_function[i] = (1.0 - eps) * remapped[x] + eps * remapped[x + 1];
             }
         }
     }
     return new_function;
 }
 
-int common::hunt(std::vector<double> xx, int n, double x, int jlo){
+int common::hunt(const std::vector<double>& xx, int n, double x, int jlo){
     int jm, jhi, inc;
     int ascnd;
 
@@ -353,12 +353,10 @@ std::vector<std::string> common::tokenize(std::string s, std::string del){
     while (end != -1) {
         word = s.substr(start, end - start);
         words.push_back(word);
-        //std::cout << s.substr(start, end - start) << std::endl;
         start = end + del.size();
         end = s.find(del, start);
     }
     word = s.substr(start, end - start);
     words.push_back(word);
-    //std::cout << s.substr(start, end - start) << std::endl;
     return words;
 }

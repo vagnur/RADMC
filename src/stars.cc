@@ -250,3 +250,10 @@ const std::vector<double> &stars::get_cumulative_luminosity() const {
     return cumulative_luminosity;
 }
 
+int stars::identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution){
+                           //int number_of_stars, const std::vector<double> &luminosities_cum) {
+    double star_lum = uniform_zero_one_distribution(generator);
+    //TODO : Obtener luminosities cum
+    int star = common::hunt(this -> cumulative_luminosity, number_of_stars + 1, star_lum, number_of_stars);
+    return star;
+}

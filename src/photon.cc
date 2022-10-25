@@ -20,7 +20,6 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     this->cumulative_alpha.resize(number_of_species + 1);
     this->enerPart.resize(number_of_species);
     this->enerCum.resize(number_of_species + 1);
-    this->dbCumul.resize(number_of_species + 1);
     this -> cell_walls.resize(3);
     this -> tempLocal.resize(number_of_species);
     this -> dbCumul.resize(number_of_frequencies+1);
@@ -54,6 +53,45 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     this->on_grid = true;
 }
 
+photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+               int number_of_species, int number_of_frequencies, int star_source, int ray_inu, const std::vector<double>& star_ray_position) {
+    //At first, we resize each vector in order to store relevant information for the photon
+    this->orientation.resize(3);
+    this->direction.resize(3);
+    this->distance.resize(3);
+    this->ray_position.resize(3);
+    this->grid_position.resize(3);
+    this -> prev_grid_position.resize(3);
+    this -> prev_ray_position.resize(3);
+    this->alpha_A_specie.resize(number_of_species);
+    this->alpha_S_specie.resize(number_of_species);
+    this->cumulative_alpha.resize(number_of_species + 1);
+    this->enerPart.resize(number_of_species);
+    this->enerCum.resize(number_of_species + 1);
+    this -> cell_walls.resize(3);
+    this -> tempLocal.resize(number_of_species);
+    this -> dbCumul.resize(number_of_frequencies+1);
+    //Then, we identify the star source of the photon
+    this -> star_source = star_source;
+    //We set the ray position according to the star source
+    this -> set_ray_position(star_ray_position);
+    //We get a random direction for the photon
+    this->get_random_direction(generator, uniform_zero_one_distribution);
+    //We get a random frequency for the photon
+    //At this frequency, we know relevant information about the scattering properties of the dust specie
+    this -> ray_inu = ray_inu;
+    //We get a tau path for the photon
+    this->get_tau_path(generator,uniform_zero_one_distribution);
+    //At first, the photon is on the grid
+    this->on_grid = true;
+}
+
+void photon::set_ray_position(std::vector<double> star_ray_position){
+    this -> ray_position[0] = star_ray_position[0];
+    this -> ray_position[1] = star_ray_position[1];
+    this -> ray_position[2] = star_ray_position[2];
+}
+
 void photon::identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                            int number_of_stars, const std::vector<double> &luminosities_cum) {
     double star_lum = uniform_zero_one_distribution(generator);
@@ -70,7 +108,7 @@ void photon::get_random_direction(std::mt19937& generator, std::uniform_real_dis
     //TODO : Entender este vector
     //TODO : dejar este vector en el objeto
     std::vector<int> values_orientations = {0, 1, 1};
-    //We intialize this values just to avoid the warning
+    //We intialize this values just to avoid a warning
     double l2, dirx=0.0, diry=0.0, dirz=0.0, linv;
     int ix, iy, iz;
     bool equal_zero = true;
@@ -182,9 +220,9 @@ void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribu
             this->ray_position[0] =
                     this->prev_ray_position[0] + fraction * (this->ray_position[0] - prev_ray_position[0]);
             this->ray_position[1] =
-                    this->prev_ray_position[1] + fraction * (this->ray_position[0] - prev_ray_position[1]);
+                    this->prev_ray_position[1] + fraction * (this->ray_position[1] - prev_ray_position[1]);
             this->ray_position[2] =
-                    this->prev_ray_position[2] + fraction * (this->ray_position[0] - prev_ray_position[2]);
+                    this->prev_ray_position[2] + fraction * (this->ray_position[2] - prev_ray_position[2]);
 
             this->grid_position[0] = this->prev_grid_position[0];
             this->grid_position[1] = this->prev_grid_position[1];
@@ -627,4 +665,97 @@ const std::vector<double> &photon::getRayPosition() const {
 
 void photon::setGridPosition(const std::vector<int>& gridPosition) {
     grid_position = gridPosition;
+}
+
+void photon::set_prev_ray_position(){
+    this->prev_ray_position[0] = this->ray_position[0];
+    this->prev_ray_position[1] = this->ray_position[1];
+    this->prev_ray_position[2] = this->ray_position[2];
+}
+
+void photon::set_prev_grid_position() {
+    this->prev_grid_position[0] = this->grid_position[0];
+    this->prev_grid_position[1] = this->grid_position[1];
+    this->prev_grid_position[2] = this->grid_position[2];
+}
+
+double photon::get_dtau(){
+    return this -> dtau;
+}
+
+double photon::get_tau_path_total(){
+    return this -> tau_path_total;
+}
+
+double photon::get_tau_path_gone(){
+    return this -> tau_path_gone;
+}
+
+double photon::get_albedo(){
+    return this -> albedo;
+}
+
+double photon::get_alpha_A_total(){
+    return this -> alpha_A_total;
+}
+
+const std::vector<double>& photon::get_alpha_A_specie() const{
+    return this -> alpha_A_specie;
+}
+
+const std::vector<int>& photon::get_grid_position() const{
+    return this -> grid_position;
+}
+
+void photon::update_tau_path_gone(){
+    this->tau_path_gone = this->tau_path_gone + this->dtau;
+}
+
+void photon::set_scattering_state(double rn){
+    this->is_scattering = rn < this->albedo;
+}
+
+int photon::get_ray_inu() const{
+    return this -> ray_inu;
+}
+
+void photon::set_ener_part(const std::vector<double>& ener_part){
+    this -> enerPart = ener_part;
+}
+
+void photon::set_temp_local(const std::vector<double>& temp_local){
+    this -> tempLocal = temp_local;
+}
+
+const std::vector<double>& photon::get_ener_part() const{
+    return this -> enerPart;
+}
+
+const std::vector<double>& photon::get_ener_cum() const{
+    return this -> enerCum;
+}
+
+const std::vector<double>& photon::get_temp_local() const{
+    return this -> tempLocal;
+}
+
+void photon::set_ray_inu(int ray_inu){
+    this -> ray_inu = ray_inu;
+}
+
+const std::vector<int>& photon::get_prev_grid_position() const{
+    return this -> prev_grid_position;
+}
+
+void photon::update_ray_position(double fraction){
+    this->ray_position[0] =
+            this->prev_ray_position[0] + fraction * (this->ray_position[0] - prev_ray_position[0]);
+    this->ray_position[1] =
+            this->prev_ray_position[1] + fraction * (this->ray_position[1] - prev_ray_position[1]);
+    this->ray_position[2] =
+            this->prev_ray_position[2] + fraction * (this->ray_position[2] - prev_ray_position[2]);
+
+    this->grid_position[0] = this->prev_grid_position[0];
+    this->grid_position[1] = this->prev_grid_position[1];
+    this->grid_position[2] = this->prev_grid_position[2];
 }

@@ -234,3 +234,15 @@ void dust::remap_opacities_values(int specie, const std::vector<double>& frequen
 std::vector<dust_species> &dust::get_dust_species_to_change(void) {
     return this -> dust_species_information;
 }
+
+void dust::add_energy_specie(int specie,std::vector<int> grid_position,double add_tmp){
+    this -> dust_species_information[specie].add_energy(grid_position[0],grid_position[1],grid_position[2], add_tmp);
+}
+
+void dust::set_specie_temperature_at_position(int iSpec,int ix,int iy,int iz,double temperature){
+    this -> dust_species_information[iSpec].set_temperature_at_position(ix,iy,iz,temperature);
+}
+
+void dust::set_null_temperature(int iSpecie,int i,int j,int k){
+    this -> dust_species_information[iSpecie].set_null_temperature(i,j,k);
+}

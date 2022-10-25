@@ -127,6 +127,6 @@ void dust_species::set_temperature_at_position(int ix, int iy, int iz, double te
     this -> temperatures[iz][iy][ix] = temperature;
 }
 
-void dust_species::convert_energy_to_temperature(){
-
+void dust_species::set_null_temperature(int ix, int iy, int iz){
+    this -> temperatures[iz][iy][ix] = 0;
 }
