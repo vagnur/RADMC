@@ -18,8 +18,11 @@ class emissivity {
 
 private:
 
+    //Number of temperatures in
     int number_of_temperatures;
+    //Lowest temperature for the emissivity database
     double temp0;
+    //Highest temperature for the emissivity database
     double temp1;
     //This vector stores the precalculated temperatures
     std::vector<double> db_temp;
@@ -61,20 +64,21 @@ public:
     //Output: Vector with the cumulative emissivity and the emissivity of each frequency
     std::vector<double> absorption_event(double temp, int number_of_frequencies, const std::vector<double>& cell_alpha, const std::vector<double>& freq_nu, const std::vector<double>& freq_dnu);
 
+    //Method that compute the temperature from an inputted energy for a particular dust specie
+    //Input : double energy -> Energy of the dust specie in the cell of the grid
+    //        int specie -> Position of the dust specie in the vector
+    //Output : The calculated temperature
+    double compute_dust_temp_energy(double energy, int specie);
 
     //Getters
     const std::vector<double> &get_db_temp() const;
-
     const std::vector<std::vector<double>> & get_db_enertemp() const;
-
     const std::vector<std::vector<double>> &get_db_logenertemp() const;
-
     const std::vector<std::vector<std::vector<double>>> &get_db_cumulnorm() const;
 
     //Empty destructor
     ~emissivity(void);
 
-    double compute_dust_temp_energy(double energy, int iSpec);
 };
 
 #endif //RADMC_EMISSIVITY_HH

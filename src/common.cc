@@ -360,3 +360,15 @@ std::vector<std::string> common::tokenize(std::string s, std::string del){
     words.push_back(word);
     return words;
 }
+
+void common::chek_unity_vector(double x, double y, double z) {
+    double module = std::sqrt((x * x) + (y * y) + (z * z));
+    if (std::fabs(module - 1.0) > 1e-6) {
+        std::cerr << "ERROR : Error unity vector " << x << " " << y << " " << z << std::endl;
+        exit(0);
+    }
+}
+
+double common::get_four_times_pi() {
+    return four_pi;
+}

@@ -24,7 +24,7 @@ int main() {
 
     monte_carlo mc;
     //mc.do_monte_carlo_therm_regular_cartesian_grid();
-    mc.do_monte_carlo_therm_regular_cartesian_grid_2();
+    mc.do_monte_carlo_therm_regular_cartesian_grid();
 
     //std::vector<double> prueba = {0.0,0.3,0.8,1.0};
     //std::cout << common::hunt(prueba,4,0.5,2) << std::endl;

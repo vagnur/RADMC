@@ -4,7 +4,7 @@
 #include <vector>
 
 /*
- * A star is the source of photons for the monte carlo therm simulation
+ * A star is the source of m_photons for the monte carlo therm simulation
  * Each star has relevant information that is going to be stored in each star object
  */
 class star {

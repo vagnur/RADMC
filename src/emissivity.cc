@@ -102,9 +102,10 @@ void emissivity::compute_derivate(int number_of_species, int number_of_temperatu
     }
 }
 
+//TODO : Preguntar formula
 std::vector<double> emissivity::absorption_event(double temp, int number_of_frequencies, const std::vector<double>& cell_alpha, const std::vector<double>& freq_nu, const std::vector<double>& freq_dnu){
     std::vector<double> fnu_diff(number_of_frequencies+1);
-    double fourpi = 12.5663706143591729538505735331;
+    double fourpi = common::get_four_times_pi();
     double demis = 0.0;
     for (int i = 0; i < number_of_frequencies; ++i) {
         fnu_diff[i] = cell_alpha[i] * common::black_body_planck_function(temp,freq_nu[i]);
@@ -115,53 +116,40 @@ std::vector<double> emissivity::absorption_event(double temp, int number_of_freq
     return fnu_diff;
 }
 
-double emissivity::compute_dust_temp_energy(double energy, int iSpec){
+//TODO : Preguntar formula
+double emissivity::compute_dust_temp_energy(double energy, int specie){
     double tempReturn = 0.0;
     int itemp = 0;
     double logEner = std::log(energy);
     double eps;
-    //TODO : Obtener dblogenergtemp de la especie
-    itemp = common::hunt(this -> db_logenertemp[iSpec], this -> number_of_temperatures, logEner, this -> number_of_temperatures);
-    //itemp = common::hunt(dbLogEnerTemp[iSpec], number_of_temperatures, logEner, number_of_temperatures);
-    //printf("itemp=%d\n", *itemp);
+    itemp = common::hunt(this -> db_logenertemp[specie], this -> number_of_temperatures, logEner, this -> number_of_temperatures);
     if (itemp >= this -> number_of_temperatures - 1) {
-        std::cout << "aca 1" << std::endl;
         std::cerr << "ERROR : Too high temperature discovered" << std::endl;
+        std::cerr << "variable itemp >= max index of the temperatures database" << std::endl;
         exit(0);
     }
 
+    //TODO : Creo que debería ser else if
+    //else if (itemp <= 1) {
     if (itemp <= -1) {
-        //Temperature presumably below lowest temp in dbase
-        //TODO : Obtener enertemp de la especie
-        //eps = energy / dbEnerTemp[iSpec][0];
-        eps = energy / db_enertemp[iSpec][0];
+        //Temperature presumably below lowest temperature in the database
+        eps = energy / db_enertemp[specie][0];
         if (eps >= 1) {
-            //printf("exit\n");
-            //exit(1);
-            std::cout << "aca 2" << std::endl;
             std::cerr << "ERROR : Too high temperature discovered" << std::endl;
             exit(0);
         }
-        //tempReturn = eps * dbTemp[0];
         tempReturn = eps * this -> db_temp[0];
-    } else {
-        //TODO : Obtener enertemp de la especie
-        //eps = (energy - dbEnerTemp[iSpec][itemp]) / (dbEnerTemp[iSpec][itemp + 1] - dbEnerTemp[iSpec][itemp]);
-        eps = (energy - this -> db_enertemp[iSpec][itemp]) / (this -> db_enertemp[iSpec][itemp + 1] - this -> db_enertemp[iSpec][itemp]);
+    }
+    //If we are in the range of the database
+    else {
+        eps = (energy - this -> db_enertemp[specie][itemp]) / (this -> db_enertemp[specie][itemp + 1] - this -> db_enertemp[specie][itemp]);
         if ((eps > 1) || (eps < 0)) {
             std::cerr << "ERROR : Temperature found out of range..." << std::endl;
-            //printf("exit\n");
             exit(0);
         }
-        //TODO : Obtener dbTemp
-        //tempReturn = (1.0 - eps) * dbTemp[itemp] + eps * dbTemp[itemp + 1];
         tempReturn = (1.0 - eps) * this -> db_temp[itemp] + eps * db_temp[itemp + 1];
     }
     return tempReturn;
-}
-
-emissivity::~emissivity(void){
-    ;
 }
 
 const std::vector<double>& emissivity::get_db_temp() const{
@@ -178,4 +166,8 @@ const std::vector<std::vector<double>>& emissivity::get_db_logenertemp() const{
 
 const std::vector<std::vector<std::vector<double>>>& emissivity::get_db_cumulnorm() const{
     return this -> db_cumulnorm;
+}
+
+emissivity::~emissivity(void){
+    ;
 }

@@ -83,23 +83,32 @@ public:
     //Output : It's going to return a vector<double> with the lambda points
     std::vector<double> convert_lambda_to_frequency(std::vector<double> frequency,int number_of_frequency);
 
-    //Getter for the dust species
+    //This method add energy to a position in the grid for the specie
+    //Input : int specie -> position of the specie in the dust information vector
+    //        vector grid_position -> vector with the position in the grid where we are going to add the energy
+    //        double add_energy -> energy that we are going to add in that position of the grid
+    //Output : It has no output, but is going to modify the energy vector of the inputed specie
+    void add_energy_specie(int specie, std::vector<int> grid_position, double add_energy);
+
+    //This method set the temperature at a position for a particular dust specie
+    //Input : int specie -> position of the specie in the dust information vector
+    //        int iD -> position in the grid in dimension iD (D = x, y or z)
+    //        int temperature -> temperature that is going to be assigned in the grid position
+    //Output : It has no output, but the temperature vector of the specie is going to store the new temperature in the grid position
+    void set_specie_temperature_at_position(int specie, int ix, int iy, int iz, double temperature);
+
+    //This method set a null temperature in the grid position for a particular dust specie
+    //Input : int specie -> position of the specie in the dust information vector
+    //        int iD -> position in the grid in dimension iD (D = x, y or z)
+    //Output : It has no output, but the temperature vector of the specie is going to store the new null temperature in the grid position
+    void set_null_temperature(int specie, int i, int j, int k);
+
+    //Getters
     const std::vector<dust_species>& get_dust_species(void) const;
-
-    //Getter for the species but not in const type so we can change things in the vector
-    std::vector<dust_species>& get_dust_species_to_change(void);
-
-    //Getter for the number of dust species
     int get_number_of_dust_species(void) const;
 
     //Empty destructor
     ~dust(void);
-
-    void add_energy_specie(int specie, std::vector<int> grid_position, double add_tmp);
-
-    void set_specie_temperature_at_position(int iSpec, int ix, int iy, int iz, double temperature);
-
-    void set_null_temperature(int iSpecie, int i, int j, int k);
 };
 
 

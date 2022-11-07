@@ -5,6 +5,285 @@ photon::photon(void){
 }
 
 photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+               int number_of_species, int number_of_frequencies, int star_source, int frequency_index, const std::vector<double>& star_ray_position) {
+    //At first, we resize each vector in order to store relevant information for the photon
+    this->orientation.resize(3);
+    this->direction.resize(3);
+    this->distance.resize(3);
+    this->ray_position.resize(3);
+    this->grid_position.resize(3);
+    this -> prev_grid_position.resize(3);
+    this -> prev_ray_position.resize(3);
+    this->alpha_A_specie.resize(number_of_species);
+    this->alpha_S_specie.resize(number_of_species);
+    this->cumulative_alpha.resize(number_of_species + 1);
+    this->dust_specie_energy.resize(number_of_species);
+    this->cumulative_dust_specie_energy.resize(number_of_species + 1);
+    this -> cell_walls.resize(3);
+    this -> dust_specie_temperature.resize(number_of_species);
+    this -> dbCumul.resize(number_of_frequencies+1);
+    //Then, we identify the star source of the photon
+    this -> star_source = star_source;
+    //We set the ray position according to the star source
+    this -> set_ray_position(star_ray_position);
+    //We get a random frequency for the photon
+    //At this frequency, we know relevant information about the scattering properties of the dust specie
+    this -> frequency_index = frequency_index;
+    //We get a tau path for the photon
+    this->calculate_tau_path(generator, uniform_zero_one_distribution);
+    //At first, the photon is on the grid
+    this->on_grid = true;
+}
+
+void photon::calculate_tau_path(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
+    double rn = uniform_zero_one_distribution(generator);
+    this->tau_path_total = -1.0 * std::log(1.0 - rn);
+    this->tau_path_gone = 0.0;
+}
+
+double
+photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
+                              const std::vector<double> &grid_cell_walls_y,
+                              const std::vector<double> &grid_cell_walls_z) {
+
+    std::vector<int> signs = {-1, 1};
+    this->obtain_cell_walls(grid_cell_walls_x, grid_cell_walls_y, grid_cell_walls_z);
+    this->distance[0] = (this->cell_walls[0] - this->ray_position[0]) / this->direction[0];
+    this->distance[1] = (this->cell_walls[1] - this->ray_position[1]) / this->direction[1];
+    this->distance[2] = (this->cell_walls[2] - this->ray_position[2]) / this->direction[2];
+
+    double min_distance = std::min(std::min(distance[0], distance[1]), distance[2]);
+    int count = 0;
+    std::vector<int> indexes = {-1, -1, -1};
+    for (int i = 0; i < 3; ++i) {
+        if (this->distance[i] == min_distance) {
+            indexes[count] = i;
+            count++;
+        }
+    }
+
+    this->ray_position[0] = this->ray_position[0] + min_distance * this->direction[0];
+    this->ray_position[1] = this->ray_position[1] + min_distance * this->direction[1];
+    this->ray_position[2] = this->ray_position[2] + min_distance * this->direction[2];
+
+    //avoid bug assign cellWall to ray position
+    //update grid position with signs
+    for (int i = 0; i < count; i++) {
+        this->ray_position[indexes[i]] = this->cell_walls[indexes[i]];
+        //TODO : Revisar signo +
+        this->grid_position[indexes[i]] = this->grid_position[indexes[i]] + signs[this->orientation[indexes[i]]];
+    }
+
+    this->is_on_grid(number_of_points_X, number_of_points_Y, number_of_points_Z);
+    return min_distance;
+}
+
+void photon::obtain_cell_walls(const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
+                               const std::vector<double> &grid_cell_walls_z) {
+    this->cell_walls[0] = grid_cell_walls_x[this->grid_position[0] + this->orientation[0]];
+    this->cell_walls[1] = grid_cell_walls_y[this->grid_position[1] + this->orientation[1]];
+    this->cell_walls[2] = grid_cell_walls_z[this->grid_position[2] + this->orientation[2]];
+}
+
+void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int number_of_points_z) {
+    bool on_x = (this->grid_position[0] >= 0) && (this->grid_position[0] < number_of_points_x);
+    bool on_y = (this->grid_position[1] >= 0) && (this->grid_position[1] < number_of_points_y);
+    bool on_z = (this->grid_position[2] >= 0) && (this->grid_position[2] < number_of_points_z);
+    this->on_grid = on_x && on_y && on_z;
+}
+
+void photon::calculate_opacity_coefficients(double minor_distance, int number_of_species,
+                                            const std::vector<dust_species>& dust_species_information) {
+    //We obtain the previous position of the photon before the movement
+    int ix = this->prev_grid_position[0];
+    int iy = this->prev_grid_position[1];
+    int iz = this->prev_grid_position[2];
+
+    //In order to obtain the total opacity of the cell, we need to considerate the densities of the species as the
+    //  position of the photon
+    double opacity_coefficient_alpha_A_total = 0;
+    double opacity_coefficient_alpha_S_total = 0;
+
+    for (int i = 0; i < number_of_species; ++i) {
+        //We obtain the absorption opacity and the scattering opacity, then we do that value times the
+        //  density and we accumulate the result
+
+        //this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->frequency_index];
+        //this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->frequency_index];
+        this -> alpha_A_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_absorption_interpoled()[this->frequency_index];
+        this -> alpha_S_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_scattering_interpoled()[this->frequency_index];
+        opacity_coefficient_alpha_A_total = opacity_coefficient_alpha_A_total + this->alpha_A_specie[i];
+        opacity_coefficient_alpha_S_total = opacity_coefficient_alpha_S_total + this->alpha_S_specie[i];
+    }
+    //We store the calculated values for the photon
+    this->alpha_A_total = opacity_coefficient_alpha_A_total;
+    this->alpha_S_total = opacity_coefficient_alpha_S_total;
+    this->alpha_total = opacity_coefficient_alpha_A_total + opacity_coefficient_alpha_S_total;
+    //The albedo is the radiation percentage that the specie reflex respect the radiation that affects it
+    this->albedo = opacity_coefficient_alpha_S_total / this->alpha_total;
+    this->dtau = this->alpha_total * minor_distance;
+
+}
+
+int photon::find_specie_to_scattering(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
+                                      int number_of_species) {
+    this->cumulative_alpha[0] = 0.0;
+    for (int i = 0; i < number_of_species; ++i) {
+        this->cumulative_alpha[i + 1] = this->cumulative_alpha[i] + this->alpha_S_specie[i];
+    }
+    for (int i = 0; i < number_of_species; ++i) {
+        this->cumulative_alpha[i] = this->cumulative_alpha[i] / this->cumulative_alpha[number_of_species];
+    }
+    this->cumulative_alpha[number_of_species] = 1.0;
+
+    double rn = uniform_zero_one_distribution(generator);
+    int iSpec = common::hunt(this->cumulative_alpha, number_of_species + 1, rn, number_of_species);
+    return iSpec;
+}
+
+void photon::update_ray_position(double fraction){
+    this->ray_position[0] =
+            this->prev_ray_position[0] + fraction * (this->ray_position[0] - prev_ray_position[0]);
+    this->ray_position[1] =
+            this->prev_ray_position[1] + fraction * (this->ray_position[1] - prev_ray_position[1]);
+    this->ray_position[2] =
+            this->prev_ray_position[2] + fraction * (this->ray_position[2] - prev_ray_position[2]);
+
+    this->grid_position[0] = this->prev_grid_position[0];
+    this->grid_position[1] = this->prev_grid_position[1];
+    this->grid_position[2] = this->prev_grid_position[2];
+}
+
+void photon::update_tau_path_gone(){
+    this->tau_path_gone = this->tau_path_gone + this->dtau;
+}
+
+int photon::get_star_source(void) const {
+    return this->star_source;
+}
+
+bool photon::get_on_grid_condition() const {
+    return this->on_grid;
+}
+
+bool photon::get_is_scattering_condition() const {
+    return this->is_scattering;
+}
+
+const std::vector<double> &photon::get_ray_position() const {
+    return ray_position;
+}
+
+double photon::get_dtau() const{
+    return this -> dtau;
+}
+
+double photon::get_tau_path_total() const{
+    return this -> tau_path_total;
+}
+
+double photon::get_tau_path_gone() const{
+    return this -> tau_path_gone;
+}
+
+double photon::get_albedo() const{
+    return this -> albedo;
+}
+
+double photon::get_alpha_A_total() const{
+    return this -> alpha_A_total;
+}
+
+const std::vector<double>& photon::get_alpha_A_specie() const{
+    return this -> alpha_A_specie;
+}
+
+const std::vector<int>& photon::get_grid_position() const{
+    return this -> grid_position;
+}
+
+int photon::get_frequency_index() const{
+    return this -> frequency_index;
+}
+
+const std::vector<double>& photon::get_dust_specie_energy() const{
+    return this -> dust_specie_energy;
+}
+
+const std::vector<double>& photon::get_cumulative_dust_specie_energy() const{
+    return this -> cumulative_dust_specie_energy;
+}
+
+const std::vector<double>& photon::get_temp_local() const{
+    return this -> dust_specie_temperature;
+}
+
+const std::vector<int>& photon::get_prev_grid_position() const{
+    return this -> prev_grid_position;
+}
+
+const std::vector<double>& photon::get_direction() const{
+    return this -> direction;
+}
+
+void photon::set_orientation(const std::vector<int>& orientation){
+    this -> orientation[0] = orientation[0];
+    this -> orientation[1] = orientation[1];
+    this -> orientation[2] = orientation[2];
+}
+
+void photon::set_direction(const std::vector<double>& direction){
+    this -> direction[0] = direction[0];
+    this -> direction[1] = direction[1];
+    this -> direction[2] = direction[2];
+}
+
+void photon::set_dust_specie_energy(const std::vector<double>& dust_specie_energy){
+    this -> dust_specie_energy = dust_specie_energy;
+}
+
+void photon::set_dust_specie_temperature(const std::vector<double>& dust_specie_temperature){
+    this -> dust_specie_temperature = dust_specie_temperature;
+}
+
+void photon::set_grid_position(const std::vector<int>& grid_position) {
+    this -> grid_position = grid_position;
+}
+
+void photon::set_prev_ray_position(){
+    this->prev_ray_position[0] = this->ray_position[0];
+    this->prev_ray_position[1] = this->ray_position[1];
+    this->prev_ray_position[2] = this->ray_position[2];
+}
+
+void photon::set_prev_grid_position() {
+    this->prev_grid_position[0] = this->grid_position[0];
+    this->prev_grid_position[1] = this->grid_position[1];
+    this->prev_grid_position[2] = this->grid_position[2];
+}
+
+void photon::set_ray_position(std::vector<double> ray_position){
+    this -> ray_position[0] = ray_position[0];
+    this -> ray_position[1] = ray_position[1];
+    this -> ray_position[2] = ray_position[2];
+}
+
+void photon::set_frequency_index(int frequency_index){
+    this -> frequency_index = frequency_index;
+}
+
+void photon::set_scattering_state(double rn){
+    this->is_scattering = rn < this->albedo;
+}
+
+photon::~photon(void) {
+    ;
+}
+
+//////////////////DEPRECIATED CODE////////////////////
+
+/*
+photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                int number_of_species, int number_of_stars, int number_of_frequencies,
                const std::vector<double> &luminosities_cum, const std::vector<star>& star_information) {
     //At first, we resize each vector in order to store relevant information for the photon
@@ -18,10 +297,10 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     this->alpha_A_specie.resize(number_of_species);
     this->alpha_S_specie.resize(number_of_species);
     this->cumulative_alpha.resize(number_of_species + 1);
-    this->enerPart.resize(number_of_species);
-    this->enerCum.resize(number_of_species + 1);
+    this->dust_specie_energy.resize(number_of_species);
+    this->cumulative_dust_specie_energy.resize(number_of_species + 1);
     this -> cell_walls.resize(3);
-    this -> tempLocal.resize(number_of_species);
+    this -> dust_specie_temperature.resize(number_of_species);
     this -> dbCumul.resize(number_of_frequencies+1);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
     //Then, we identify the star source of the photon
@@ -48,50 +327,13 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     //At this frequency, we know relevant information about the scattering properties of the dust specie
     this->get_random_frequency_inu(generator, uniform_zero_one_distribution,star_information[this -> star_source].get_cumulative_spectrum(), number_of_frequencies);
     //TODO : Qué es el tau path
-    this->get_tau_path(generator,uniform_zero_one_distribution);
+    this->calculate_tau_path(generator,uniform_zero_one_distribution);
     //At first, the photon is on the grid
     this->on_grid = true;
 }
+ */
 
-photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
-               int number_of_species, int number_of_frequencies, int star_source, int ray_inu, const std::vector<double>& star_ray_position) {
-    //At first, we resize each vector in order to store relevant information for the photon
-    this->orientation.resize(3);
-    this->direction.resize(3);
-    this->distance.resize(3);
-    this->ray_position.resize(3);
-    this->grid_position.resize(3);
-    this -> prev_grid_position.resize(3);
-    this -> prev_ray_position.resize(3);
-    this->alpha_A_specie.resize(number_of_species);
-    this->alpha_S_specie.resize(number_of_species);
-    this->cumulative_alpha.resize(number_of_species + 1);
-    this->enerPart.resize(number_of_species);
-    this->enerCum.resize(number_of_species + 1);
-    this -> cell_walls.resize(3);
-    this -> tempLocal.resize(number_of_species);
-    this -> dbCumul.resize(number_of_frequencies+1);
-    //Then, we identify the star source of the photon
-    this -> star_source = star_source;
-    //We set the ray position according to the star source
-    this -> set_ray_position(star_ray_position);
-    //We get a random direction for the photon
-    this->get_random_direction(generator, uniform_zero_one_distribution);
-    //We get a random frequency for the photon
-    //At this frequency, we know relevant information about the scattering properties of the dust specie
-    this -> ray_inu = ray_inu;
-    //We get a tau path for the photon
-    this->get_tau_path(generator,uniform_zero_one_distribution);
-    //At first, the photon is on the grid
-    this->on_grid = true;
-}
-
-void photon::set_ray_position(std::vector<double> star_ray_position){
-    this -> ray_position[0] = star_ray_position[0];
-    this -> ray_position[1] = star_ray_position[1];
-    this -> ray_position[2] = star_ray_position[2];
-}
-
+/*
 void photon::identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                            int number_of_stars, const std::vector<double> &luminosities_cum) {
     double star_lum = uniform_zero_one_distribution(generator);
@@ -99,57 +341,15 @@ void photon::identify_star(std::mt19937& generator, std::uniform_real_distributi
     int star = common::hunt(luminosities_cum, number_of_stars + 1, star_lum, number_of_stars);
     this->star_source = star;
 }
+ */
 
+/*
 int photon::found_point(double x, std::string type, int number_of_points, double difference) {
     return std::floor(x / difference) + (number_of_points / 2);
 }
+ */
 
-void photon::get_random_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
-    //TODO : Entender este vector
-    //TODO : dejar este vector en el objeto
-    std::vector<int> values_orientations = {0, 1, 1};
-    //We intialize this values just to avoid a warning
-    double l2, dirx=0.0, diry=0.0, dirz=0.0, linv;
-    int ix, iy, iz;
-    bool equal_zero = true;
-    l2 = 2.0;
-    while (equal_zero) {
-        while (l2 > 1.0) {
-            dirx = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
-            diry = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
-            dirz = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
-            l2 = dirx * dirx + diry * diry + dirz * dirz;
-            if (l2 < 1e-4) {
-                l2 = 2.0;
-            }
-        }
-        equal_zero = (dirx == 0.0) || (diry == 0.0)|| (dirz == 0.0);
-    }
-
-    //TODO : Verificar si el l2 = 0 afecta (ver codigo esteban)
-    //TODO : Esteban hace que dirx diry y dirz no puedan ser 0
-    linv = 1.0 / std::sqrt(l2);
-
-    dirx = dirx * linv;
-    diry = diry * linv;
-    dirz = dirz * linv;
-
-    //TODO : Por qué revisar si es un vector unitario?
-    this->chek_unity_vector(dirx, diry, dirz);
-
-    ix = std::floor(dirx) + 1.0;
-    iy = std::floor(diry) + 1.0;
-    iz = std::floor(dirz) + 1.0;
-
-    this->orientation[0] = values_orientations[ix];
-    this->orientation[1] = values_orientations[iy];
-    this->orientation[2] = values_orientations[iz];
-
-    this->direction[0] = dirx;
-    this->direction[1] = diry;
-    this->direction[2] = dirz;
-}
-
+/*
 void photon::chek_unity_vector(double x, double y, double z) {
     double module = std::sqrt((x * x) + (y * y) + (z * z));
     if (std::fabs(module - 1.0) > 1e-6) {
@@ -157,19 +357,16 @@ void photon::chek_unity_vector(double x, double y, double z) {
         exit(0);
     }
 }
+ */
 
+/*
 void photon::get_random_frequency_inu(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                                       const std::vector<double> &star_cumulative_spectrum, int number_of_frequencies) {
     double rn = uniform_zero_one_distribution(generator);
     int ray_inu = common::hunt(star_cumulative_spectrum, number_of_frequencies + 1, rn, number_of_frequencies);
-    this->ray_inu = ray_inu;
+    this->frequency_index = ray_inu;
 }
-
-void photon::get_tau_path(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
-    double rn = uniform_zero_one_distribution(generator);
-    this->tau_path_total = -1.0 * std::log(1.0 - rn);
-    this->tau_path_gone = 0.0;
-}
+ */
 
 /*
 void photon::walk_full_path(){
@@ -188,12 +385,13 @@ void photon::walk_full_path(){
             this -> do_absoprtion_event();
             this -> get_random_direction();
         }
-        this -> get_tau_path();
-        this -> walk_next_event();
+        this -> calculate_tau_path();
+        this -> move();
     }
 }
 */
 
+/*
 void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,int number_of_species,
                              std::vector<dust_species>& dust_specie_information, const std::vector<star>& stars_information,
                              int number_of_points_X, int number_of_points_Y, int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
@@ -252,91 +450,9 @@ void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribu
     double rn = uniform_zero_one_distribution(generator);
     this->is_scattering = rn < this->albedo;
 }
+ */
 
-double
-photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
-                              const std::vector<double> &grid_cell_walls_y,
-                              const std::vector<double> &grid_cell_walls_z) {
-
-    std::vector<int> signs = {-1, 1};
-    this->get_cell_walls(grid_cell_walls_x, grid_cell_walls_y, grid_cell_walls_z);
-    this->distance[0] = (this->cell_walls[0] - this->ray_position[0]) / this->direction[0];
-    this->distance[1] = (this->cell_walls[1] - this->ray_position[1]) / this->direction[1];
-    this->distance[2] = (this->cell_walls[2] - this->ray_position[2]) / this->direction[2];
-
-    double min_distance = std::min(std::min(distance[0], distance[1]), distance[2]);
-    int count = 0;
-    std::vector<int> indexes = {-1, -1, -1};
-    for (int i = 0; i < 3; ++i) {
-        if (this->distance[i] == min_distance) {
-            indexes[count] = i;
-            count++;
-        }
-    }
-
-    this->ray_position[0] = this->ray_position[0] + min_distance * this->direction[0];
-    this->ray_position[1] = this->ray_position[1] + min_distance * this->direction[1];
-    this->ray_position[2] = this->ray_position[2] + min_distance * this->direction[2];
-
-    //avoid bug assign cellWall to ray position
-    //update grid position with signs
-    for (int i = 0; i < count; i++) {
-        this->ray_position[indexes[i]] = this->cell_walls[indexes[i]];
-        //TODO : Revisar signo +
-        this->grid_position[indexes[i]] = this->grid_position[indexes[i]] + signs[this->orientation[indexes[i]]];
-    }
-
-    this->is_on_grid(number_of_points_X, number_of_points_Y, number_of_points_Z);
-    return min_distance;
-}
-
-void photon::get_cell_walls(const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
-                            const std::vector<double> &grid_cell_walls_z) {
-    this->cell_walls[0] = grid_cell_walls_x[this->grid_position[0] + this->orientation[0]];
-    this->cell_walls[1] = grid_cell_walls_y[this->grid_position[1] + this->orientation[1]];
-    this->cell_walls[2] = grid_cell_walls_z[this->grid_position[2] + this->orientation[2]];
-}
-
-void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int number_of_points_z) {
-    bool on_x = (this->grid_position[0] >= 0) && (this->grid_position[0] < number_of_points_x);
-    bool on_y = (this->grid_position[1] >= 0) && (this->grid_position[1] < number_of_points_y);
-    bool on_z = (this->grid_position[2] >= 0) && (this->grid_position[2] < number_of_points_z);
-    this->on_grid = on_x && on_y && on_z;
-}
-
-void photon::calculate_opacity_coefficients(double minor_distance, int number_of_species,
-                                            const std::vector<dust_species>& dust_species_information) {
-    //We obtain the previous position of the photon before the movement
-    int ix = this->prev_grid_position[0];
-    int iy = this->prev_grid_position[1];
-    int iz = this->prev_grid_position[2];
-
-    //In order to obtain the total opacity of the cell, we need to considerate the densities of the species as the
-    //  position of the photon
-    double opacity_coefficient_alpha_A_total = 0;
-    double opacity_coefficient_alpha_S_total = 0;
-
-    for (int i = 0; i < number_of_species; ++i) {
-        //We obtain the absorption opacity and the scattering opacity, then we do that value times the
-        //  density and we accumulate the result
-
-        //this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
-        //this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->ray_inu];
-        this -> alpha_A_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_absorption_interpoled()[this->ray_inu];
-        this -> alpha_S_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_scattering_interpoled()[this->ray_inu];
-        opacity_coefficient_alpha_A_total = opacity_coefficient_alpha_A_total + this->alpha_A_specie[i];
-        opacity_coefficient_alpha_S_total = opacity_coefficient_alpha_S_total + this->alpha_S_specie[i];
-    }
-    //We store the calculated values for the photon
-    this->alpha_A_total = opacity_coefficient_alpha_A_total;
-    this->alpha_S_total = opacity_coefficient_alpha_S_total;
-    this->alpha_total = opacity_coefficient_alpha_A_total + opacity_coefficient_alpha_S_total;
-    //The albedo is the radiation percentage that the specie reflex respect the radiation that affects it
-    this->albedo = opacity_coefficient_alpha_S_total / this->alpha_total;
-    this->dtau = this->alpha_total * minor_distance;
-
-}
-
+/*
 void photon::do_absorption_event(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
                                  int number_of_species,
                                  std::vector<dust_species>& dust_species_information,
@@ -352,13 +468,15 @@ void photon::do_absorption_event(std::mt19937& generator, std::uniform_real_dist
     this -> divideAbsorvedEnergy(number_of_species, star_information, dust_species_information);
     this -> addTemperatureDecoupled(number_of_species,cellVolumes,dust_species_information,dbTemp,dbLogEnerTemp,dbEnerTemp,number_of_temperatures);
     for (int i = 0; i < number_of_species; ++i) {
-        this -> tempLocal[i] = dust_species_information[i].get_temperature()[iz][iy][ix];
-        //this->tempLocal[i] = temperatures[i][iz][iy][ix];
+        this -> dust_specie_temperature[i] = dust_species_information[i].get_temperature()[iz][iy][ix];
+        //this->dust_specie_temperature[i] = temperatures[i][iz][iy][ix];
     }
     this->pickRandomFreqDb(generator, uniform_real_distribution,number_of_frequencies, number_of_species, number_of_temperatures, dbTemp, dbCumulNorm);
 
 }
+ */
 
+/*
 void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
                               int number_of_frequencies, int number_of_species, int number_of_temperatures,
                               const std::vector<double> &dbTemp,
@@ -370,13 +488,13 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
     int iSpec = 0;
     int iTemp = 0;
     int inuPick = 0;
-    this->enerCum[0] = 0;
+    this->cumulative_dust_specie_energy[0] = 0;
     for (int i = 1; i < (number_of_species + 1); ++i) {
-        this->enerCum[i] = this->enerCum[i - 1] + this -> enerPart[i - 1];
+        this->cumulative_dust_specie_energy[i] = this->cumulative_dust_specie_energy[i - 1] + this -> dust_specie_energy[i - 1];
     }
     if (number_of_species > 1) {
         rn = uniform_real_distribution(generator);
-        iSpec = common::hunt(this->enerCum, number_of_species + 1, rn, number_of_species);
+        iSpec = common::hunt(this->cumulative_dust_specie_energy, number_of_species + 1, rn, number_of_species);
         if ((iSpec < 0 || (iSpec > number_of_species - 1))) {
             std::cerr << "ERROR : Specie found out of range ..." << std::endl;
             //exit(0);
@@ -384,7 +502,7 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
             //exit(1);
         }
     }
-    iTemp = common::hunt(dbTemp, number_of_temperatures, this->tempLocal[iSpec], number_of_temperatures);
+    iTemp = common::hunt(dbTemp, number_of_temperatures, this->dust_specie_temperature[iSpec], number_of_temperatures);
     double eps = 0.0;
 
     if (iTemp >= number_of_temperatures - 1) {
@@ -395,7 +513,7 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
     if (iTemp <= -1) {
         iTemp = 0;
     } else {
-        eps = (tempLocal[iSpec] - dbTemp[iTemp]) / (dbTemp[iTemp + 1] - dbTemp[iTemp]);
+        eps = (dust_specie_temperature[iSpec] - dbTemp[iTemp]) / (dbTemp[iTemp + 1] - dbTemp[iTemp]);
         if ((eps > 1) || (eps < 0)) {
             std::cerr << "ERROR : In picking new random frequency, eps out of range" << std::endl;
             //exit(0);
@@ -427,9 +545,11 @@ void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distrib
         inuPick = common::hunt(dbCumulNorm[iSpec][iTemp - 1], number_of_frequencies, rn,
                                number_of_frequencies);
     }
-    this->ray_inu = inuPick;
+    this->frequency_index = inuPick;
 }
+ */
 
+/*
 //void photon::addTemperatureDecoupled(int number_of_species,
 //                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &cumulEner,
 //                                     const std::vector<std::vector<std::vector<std::vector<double>>>> &densities,
@@ -461,7 +581,9 @@ void photon::addTemperatureDecoupled(int number_of_species, double cellVolumes,
         //dustTemperature->temperatures[iSpec][iz][iy][ix] = computeDusttempEnergyBd(emissivityDb, cumen, iSpec);
     }
 }
+ */
 
+/*
 double photon::computeDusttempEnergyBd(const std::vector<double> &dbTemp,
                                        const std::vector<std::vector<double>> &dbLogEnerTemp,
                                        const std::vector<std::vector<double>> &dbEnerTemp, int number_of_temperatures,
@@ -503,7 +625,9 @@ double photon::computeDusttempEnergyBd(const std::vector<double> &dbTemp,
     }
     return tempReturn;
 }
+ */
 
+/*
 //void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<double> &star_energies,
 //                                  const std::vector<std::vector<std::vector<std::vector<double>>>> &density,
 //                                  const std::vector<std::vector<double>> &kappa_A) {
@@ -516,24 +640,26 @@ void photon::divideAbsorvedEnergy(int number_of_species, const std::vector<star>
     double alphaA = 0;
     if (number_of_species == 1) {
         //TODO : Obtener energia de la estrella
-        this -> enerPart[0] = star_information[this -> star_source].get_energy();
-        //this->enerPart[0] = star_energies[this->star_source];
+        this -> dust_specie_energy[0] = star_information[this -> star_source].get_energy();
+        //this->dust_specie_energy[0] = star_energies[this->star_source];
     }
     else {
         for (int i = 0; i < number_of_species; ++i) {
             //TODO : Obtener densidad de la especie i
-            this -> enerPart[i] = dust_specie_information[i].get_densities()[iz][iy][ix] * dust_specie_information[i].get_kappa_absorption_interpoled()[this -> ray_inu];
-            //this->enerPart[i] = density[i][iz][iy][ix] * kappa_A[i][this->ray_inu];
-            //photon->enerPart[i] = dustDensity->densities[i][iz][iy][ix] * dustOpacity->kappaA[i][photon->iFrequency];
-            alphaA += this->enerPart[i];
+            this -> dust_specie_energy[i] = dust_specie_information[i].get_densities()[iz][iy][ix] * dust_specie_information[i].get_kappa_absorption_interpoled()[this -> frequency_index];
+            //this->dust_specie_energy[i] = density[i][iz][iy][ix] * kappa_A[i][this->frequency_index];
+            //photon->dust_specie_energy[i] = dustDensity->densities[i][iz][iy][ix] * dustOpacity->kappaA[i][photon->iFrequency];
+            alphaA += this->dust_specie_energy[i];
         }
         for (int i = 0; i < number_of_species; ++i) {
-            this -> enerPart[i] = star_information[this -> star_source].get_energy() * this -> enerPart[i] / alphaA;
-            //this->enerPart[i] = star_energies[this->star_source] * this->enerPart[i] / alphaA;
+            this -> dust_specie_energy[i] = star_information[this -> star_source].get_energy() * this -> dust_specie_energy[i] / alphaA;
+            //this->dust_specie_energy[i] = star_energies[this->star_source] * this->dust_specie_energy[i] / alphaA;
         }
     }
 }
+ */
 
+/*
 void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                                           const std::vector<double> &g) {
     int valuesOrientations[3] = {0, 1, 1};
@@ -541,7 +667,9 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
     double temp, g2;
     //printf("dustOpacity->g[iSpec][photon->iFrequency]=%10.10lg\n",dustOpacity->g[iSpec][photon->iFrequency]);
     //TODO : Obtener g de la especie obtenida
-    double g_value = g[this->ray_inu];
+    double g_value = g[this->frequency_index];
+    std::cout << this -> frequency_index << std::endl;
+    std::cout << g_value << std::endl;
 
     //get random numbers != 0.5 , and 2*random-1 != 0
     double rnX = 0.5;
@@ -553,6 +681,7 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
     }
 
     newx = 2 * rnX - 1.0;
+    std::cout << newx << std::endl;
     if (g_value > 0) {
         g2 = g_value * g_value;
         temp = (1.0 - g2) / (1.0 + g_value * newx);
@@ -560,6 +689,7 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
         newx = std::max(newx, -1.0);
         newx = std::min(newx, 1.0);
     }
+    std::cout << newx << std::endl;
 
     double l2 = 2.0;
     while (l2 > 1.0) {
@@ -597,7 +727,7 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
         newx = dx * vx - dy * vy;
         newy = dy * vx + dx * vy;
     }
-    this->chek_unity_vector(newx, newy, newz);
+    common::chek_unity_vector(newx, newy, newz);
     //get orientations
     //obtain orientations. It is 0 (left,down) or 1 (right, up)
     int ix = std::floor(newx) + 1.0;
@@ -608,154 +738,156 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
     this->orientation[1] = valuesOrientations[iy];
     this->orientation[2] = valuesOrientations[iz];
     //printf("floor: %d, %d, %d\n",ix,iy,iz);
-    /*if (ix==2 || iy==2 ||iz==2 ){
+    if (ix==2 || iy==2 ||iz==2 ){
       printf("actual: dirx=%lf diry=%lf dirz=%lf\nnew: dirx=%lf diry=%lf dirz=%lf\n",photon->direction[0],photon->direction[1],photon->direction[2],newx,newy,newz);
     }
 
     if (ix==2 || iy==2 ||iz==2 ){
       checkUnitVector(newx,newy,newz);
       //printf("newx=%2.8lg newy=%2.8lg newz=%2.8lg\n",newx,newy,newz);
-    }*/
+    }
     this->direction[0] = newx;
     this->direction[1] = newy;
     this->direction[2] = newz;
 }
+*/
 
-int photon::find_specie_to_scattering(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
-                                      int number_of_species) {
-
-    this->cumulative_alpha[0] = 0.0;
-    for (int i = 0; i < number_of_species; ++i) {
-        this->cumulative_alpha[i + 1] = this->cumulative_alpha[i] + this->alpha_S_specie[i];
+/*
+void photon::get_random_direction(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
+    std::vector<int> values_orientations = {0, 1, 1};
+    //We intialize this values just to avoid a warning
+    double l2, dirx=0.0, diry=0.0, dirz=0.0, linv;
+    int ix, iy, iz;
+    bool equal_zero = true;
+    l2 = 2.0;
+    while (equal_zero) {
+        while (l2 > 1.0) {
+            dirx = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+            diry = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+            dirz = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+            l2 = dirx * dirx + diry * diry + dirz * dirz;
+            if (l2 < 1e-4) {
+                l2 = 2.0;
+            }
+        }
+        equal_zero = (dirx == 0.0) || (diry == 0.0)|| (dirz == 0.0);
     }
-    for (int i = 0; i < number_of_species; ++i) {
-        this->cumulative_alpha[i] = this->cumulative_alpha[i] / this->cumulative_alpha[number_of_species];
+
+    //TODO : Verificar si el l2 = 0 afecta (ver codigo esteban)
+    //TODO : Esteban hace que dirx diry y dirz no puedan ser 0
+    linv = 1.0 / std::sqrt(l2);
+
+    dirx = dirx * linv;
+    diry = diry * linv;
+    dirz = dirz * linv;
+
+    common::chek_unity_vector(dirx, diry, dirz);
+
+    ix = std::floor(dirx) + 1.0;
+    iy = std::floor(diry) + 1.0;
+    iz = std::floor(dirz) + 1.0;
+
+    this->orientation[0] = values_orientations[ix];
+    this->orientation[1] = values_orientations[iy];
+    this->orientation[2] = values_orientations[iz];
+
+    this->direction[0] = dirx;
+    this->direction[1] = diry;
+    this->direction[2] = dirz;
+}
+*/
+
+/*
+void photon::get_henvey_greenstein_direction(std::mt19937 &generator,
+                                             std::uniform_real_distribution<> &uniform_zero_one_distribution,
+                                             const std::vector<double> &g) {
+    //TODO : cambiar los pow cuando sean cuadrados
+    int valuesOrientations[3] = {0,1,1};
+    double g2,xi,dir_x,l2,dir_y,dir_z,linv;
+    double g_value = g[this -> frequency_index];
+    g_value = 0.12445256783491307;
+    xi = uniform_zero_one_distribution(generator);
+    if (g_value != 0.0){
+        g2 = std::pow(g_value,2);
+        while (xi == 0.0 and g_value == 1.0){
+            xi = uniform_zero_one_distribution(generator);
+        }
+        xi = 0.17741459161887413;
+        dir_x = (0.5/g_value) * (1.0 + g2 - std::pow(((1.0-g2)/(1.0 - g_value + 2 * g_value * xi)),2));
     }
-    this->cumulative_alpha[number_of_species] = 1.0;
+    else{
+        dir_x = 2.0 * xi - 1.0;
+    }
+    l2 = 2.0;
+    while (l2 > 1.0){
+        dir_y = 0.74997921613727536;
+        //dir_y = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+        dir_y = 2.0 * dir_y - 1.0;
+        dir_z = 0.30334996416120863;
+        //dir_z = 2.0 * uniform_zero_one_distribution(generator) - 1.0;
+        dir_z = 2.0 * dir_z - 1.0;
+        l2 = std::pow(dir_y,2) + std::pow(dir_z,2);
+        if (l2 < 1.0e-4){
+            l2 = 2.0;
+        }
+    }
 
-    double rn = uniform_zero_one_distribution(generator);
-    int iSpec = common::hunt(this->cumulative_alpha, number_of_species + 1, rn, number_of_species);
-    return iSpec;
+    linv = std::sqrt((1.0-std::pow(dir_x,2))/l2);
+    // Now normalize to sqrt(1-mu^2)  where mu = dirx
+    dir_y = dir_y * linv;
+    dir_z = dir_z * linv;
 
+    if(std::abs(dir_x*dir_x+dir_y*dir_y+dir_z*dir_z - 1.0) > 1.0e-6){
+        std::cerr<< "ERROR : Henyey-Greenstein direction vector not OK " << std::endl;
+    }
+
+    //TODO : Todo ok hasta aca
+
+    // Rotacion vector
+    //std::cout << dir_x << " " << dir_y << " " << dir_z << std::endl;
+    //std::cout << std::sqrt((dir_x*dir_x)+(dir_y*dir_y)+(dir_z*dir_z)) << std::endl;
+
+    double oldx = this->direction[0];
+    double oldy = this->direction[1];
+    double oldz = this->direction[2];
+
+    oldx = -0.15734385689173966;
+    oldy = -1.3453880951885377e-002;
+    oldz = -0.98745222860944748;
+
+    //rotateVector
+    double l = std::sqrt((oldx * oldx) + (oldy * oldy));
+    double vx = l * dir_x - oldz * dir_z;
+    double vy = dir_y;
+    double vz = oldz * dir_x + l * dir_z;
+    //dir_x = vx;
+    //dir_z = vz;
+    if (l > 1e-10) {
+        double dx = oldx / l;
+        double dy = oldy / l;
+        dir_x = dx * vx - dy * vy;
+        dir_y = dy * vx + dx * vy;
+        dir_z = vz;
+    }
+    else{
+        dir_x = vx;
+        dir_y = vy;
+        dir_z = vz;
+    }
+
+    common::chek_unity_vector(dir_x, dir_y, dir_z);
+    //get orientations
+    //obtain orientations. It is 0 (left,down) or 1 (right, up)
+    int ix = std::floor(dir_x) + 1.0;
+    int iy = std::floor(dir_y) + 1.0;
+    int iz = std::floor(dir_z) + 1.0;
+
+    this->orientation[0] = valuesOrientations[ix];
+    this->orientation[1] = valuesOrientations[iy];
+    this->orientation[2] = valuesOrientations[iz];
+
+    this -> direction[0] = dir_x;
+    this -> direction[1] = dir_y;
+    this -> direction[2] = dir_z;
 }
-
-int photon::get_star_source(void) {
-    return this->star_source;
-}
-
-void photon::set_star_source(int star_source) {
-    this->star_source = star_source;
-}
-
-bool photon::get_on_grid_condition() {
-    return this->on_grid;
-}
-
-bool photon::get_is_scattering_condition() {
-    return this->is_scattering;
-}
-
-photon::~photon(void) {
-    ;
-}
-
-const std::vector<double> &photon::getRayPosition() const {
-    return ray_position;
-}
-
-void photon::setGridPosition(const std::vector<int>& gridPosition) {
-    grid_position = gridPosition;
-}
-
-void photon::set_prev_ray_position(){
-    this->prev_ray_position[0] = this->ray_position[0];
-    this->prev_ray_position[1] = this->ray_position[1];
-    this->prev_ray_position[2] = this->ray_position[2];
-}
-
-void photon::set_prev_grid_position() {
-    this->prev_grid_position[0] = this->grid_position[0];
-    this->prev_grid_position[1] = this->grid_position[1];
-    this->prev_grid_position[2] = this->grid_position[2];
-}
-
-double photon::get_dtau(){
-    return this -> dtau;
-}
-
-double photon::get_tau_path_total(){
-    return this -> tau_path_total;
-}
-
-double photon::get_tau_path_gone(){
-    return this -> tau_path_gone;
-}
-
-double photon::get_albedo(){
-    return this -> albedo;
-}
-
-double photon::get_alpha_A_total(){
-    return this -> alpha_A_total;
-}
-
-const std::vector<double>& photon::get_alpha_A_specie() const{
-    return this -> alpha_A_specie;
-}
-
-const std::vector<int>& photon::get_grid_position() const{
-    return this -> grid_position;
-}
-
-void photon::update_tau_path_gone(){
-    this->tau_path_gone = this->tau_path_gone + this->dtau;
-}
-
-void photon::set_scattering_state(double rn){
-    this->is_scattering = rn < this->albedo;
-}
-
-int photon::get_ray_inu() const{
-    return this -> ray_inu;
-}
-
-void photon::set_ener_part(const std::vector<double>& ener_part){
-    this -> enerPart = ener_part;
-}
-
-void photon::set_temp_local(const std::vector<double>& temp_local){
-    this -> tempLocal = temp_local;
-}
-
-const std::vector<double>& photon::get_ener_part() const{
-    return this -> enerPart;
-}
-
-const std::vector<double>& photon::get_ener_cum() const{
-    return this -> enerCum;
-}
-
-const std::vector<double>& photon::get_temp_local() const{
-    return this -> tempLocal;
-}
-
-void photon::set_ray_inu(int ray_inu){
-    this -> ray_inu = ray_inu;
-}
-
-const std::vector<int>& photon::get_prev_grid_position() const{
-    return this -> prev_grid_position;
-}
-
-void photon::update_ray_position(double fraction){
-    this->ray_position[0] =
-            this->prev_ray_position[0] + fraction * (this->ray_position[0] - prev_ray_position[0]);
-    this->ray_position[1] =
-            this->prev_ray_position[1] + fraction * (this->ray_position[1] - prev_ray_position[1]);
-    this->ray_position[2] =
-            this->prev_ray_position[2] + fraction * (this->ray_position[2] - prev_ray_position[2]);
-
-    this->grid_position[0] = this->prev_grid_position[0];
-    this->grid_position[1] = this->prev_grid_position[1];
-    this->grid_position[2] = this->prev_grid_position[2];
-}
+*/

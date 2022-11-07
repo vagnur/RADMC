@@ -111,8 +111,8 @@ void dust_species::set_g_interpoled(const std::vector<double>& g_interpoled) {
     this -> g_interpoled = g_interpoled;
 }
 
-void dust_species::add_energy(int pos_X, int pos_Y, int pos_Z, double add_tmp) {
-    this -> cumulative_energy[pos_Z][pos_Y][pos_X] += add_tmp;
+void dust_species::add_energy(int pos_X, int pos_Y, int pos_Z, double add_energy) {
+    this -> cumulative_energy[pos_Z][pos_Y][pos_X] += add_energy;
 }
 
 const std::vector<std::vector<std::vector<double>>> &dust_species::get_cumulative_energy() const {

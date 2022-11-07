@@ -184,18 +184,6 @@ std::vector<double> dust::convert_lambda_to_frequency(std::vector<double> lambda
     return frequency;
 }
 
-const std::vector<dust_species>& dust::get_dust_species(void) const{
-    return this -> dust_species_information;
-}
-
-int dust::get_number_of_dust_species(void) const{
-    return this -> number_of_species;
-}
-
-dust::~dust(void){
-    ;
-}
-
 void dust::remap_opacities_values(int specie, const std::vector<double>& frequencies, int iformat) {
     std::vector<double> specie_frequencies;
     std::vector<double> kappa_absorption;
@@ -231,18 +219,26 @@ void dust::remap_opacities_values(int specie, const std::vector<double>& frequen
     }
 }
 
-std::vector<dust_species> &dust::get_dust_species_to_change(void) {
+void dust::add_energy_specie(int specie,std::vector<int> grid_position,double add_energy){
+    this -> dust_species_information[specie].add_energy(grid_position[0],grid_position[1],grid_position[2], add_energy);
+}
+
+void dust::set_specie_temperature_at_position(int specie, int ix, int iy, int iz, double temperature){
+    this -> dust_species_information[specie].set_temperature_at_position(ix, iy, iz, temperature);
+}
+
+void dust::set_null_temperature(int specie, int i, int j, int k){
+    this -> dust_species_information[specie].set_null_temperature(i, j, k);
+}
+
+const std::vector<dust_species>& dust::get_dust_species(void) const{
     return this -> dust_species_information;
 }
 
-void dust::add_energy_specie(int specie,std::vector<int> grid_position,double add_tmp){
-    this -> dust_species_information[specie].add_energy(grid_position[0],grid_position[1],grid_position[2], add_tmp);
+int dust::get_number_of_dust_species(void) const{
+    return this -> number_of_species;
 }
 
-void dust::set_specie_temperature_at_position(int iSpec,int ix,int iy,int iz,double temperature){
-    this -> dust_species_information[iSpec].set_temperature_at_position(ix,iy,iz,temperature);
-}
-
-void dust::set_null_temperature(int iSpecie,int i,int j,int k){
-    this -> dust_species_information[iSpecie].set_null_temperature(i,j,k);
+dust::~dust(void){
+    ;
 }

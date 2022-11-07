@@ -18,14 +18,17 @@ private:
     static constexpr double light_speed = 2.9979245800000e10;
     //Light speed in microns / s^2
     static constexpr double light_speed_microns = 2.99792458e14;
+    //4 times PI
+    static constexpr double four_pi = 12.5663706143591729538505735331;
 
 public:
 
     //Getter for speed of light
     static double get_light_speed();
-
     //Getter for speed of light in microns
     static double get_light_speed_microns();
+    //Getter for 4 * PI
+    static double get_four_times_pi();
 
     //This method is going to remap the number of points of the old function to a new function
     //It has several options for the remap process
@@ -56,7 +59,7 @@ public:
 
     //This method work by searching a value in a set of values and returning the position of the nearest lower value.
     // For example, if one is looking for the value 0.5 and the set of values is {0.1;0.4;0.7;0.95}, then the method is going
-    //  to return position 2 (1 for computer science), since 0.4 is the nearest lower value of 0.5.
+    //  to return position 2 (1 since we are in computer science domain), since 0.4 is the nearest lower value of 0.5.
     //Input : vector xx -> Vector with the set of values
     //        int n -> number of points in the vector xx
     //        double x -> the value that we are looking for
@@ -76,6 +79,7 @@ public:
     //Output : a vector with the substrings founded in the split process
     static std::vector<std::string> tokenize(std::string s, std::string del = " ");
 
+    static void chek_unity_vector(double x, double y, double z);
 };
 
 #endif //RADMC_COMMON_HH

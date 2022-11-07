@@ -76,7 +76,9 @@ void frequencies::calculate_mean_intensity(void){
 
 int frequencies::get_random_frequency(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                                       const std::vector<double> &star_cumulative_spectrum) {
+    //We generate a random number between 0 and 1
     double rn = uniform_zero_one_distribution(generator);
+    //We search that value in the vector via hunt, and we get the index of the value in the vector
     int ray_inu = common::hunt(star_cumulative_spectrum, number_of_frequencies + 1, rn, number_of_frequencies);
     return ray_inu;
 }
