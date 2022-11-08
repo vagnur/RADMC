@@ -8,7 +8,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //TODO : Cómo determinamos el scattering mode???
     //TODO : RADMC original toma las decisiones a partir de los datos de entrada, creo que prefiero consultarlo
     //TODO : como una entrada o en el radmc3d.inp
-    int scattering_mode = 1;
+    int scattering_mode = 2;
     //At first, we read the main radmc3d.inp file. This file contains several information about the simulation
     //  and its parameters
     std::map<std::string, double> simulation_parameters = read_main_file();
@@ -16,7 +16,11 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     // ************ SETUP OF THE SIMULATION ENVIRONMENT **********************
 
     //We read the regular cartesian grid from the "amr_grid.inp" file
-    this->m_grid.initialize_cartesian_regular();
+    this->m_grid = new cartesian_regular_grid();
+    //this->m_grid.initialize_cartesian_regular();
+    this -> m_grid -> initialize_grid();
+    this -> m_grid -> calculate_points_delta();
+    this -> m_grid -> calculate_cell_volume();
 
     //We read the frequencies from the "wavelength_micron.inp" file, and we calculate
     //  the mean intesity.
@@ -34,22 +38,22 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     this->m_stars.calculate_total_luminosities(this->m_frequencies.get_mean_intensity());
     this->m_stars.calculate_energy(simulation_parameters["nphot"]);
     this->m_stars.fix_luminosities();
-    this->m_stars.jitter_stars(this->m_grid.get_x_points(), this->m_grid.get_y_points(),
-                               this->m_grid.get_z_points());
+    //this->m_stars.jitter_stars(this->m_grid->get_x_points(), this->m_grid->get_y_points(),
+    //                           this->m_grid->get_z_points());
 
     //We read the dust information.
     //First, we read the "dust_density.inp" file, to obtain the density of the species in the grid
-    this->m_dust.read_dust_species_density(this->m_grid.get_number_of_points_X(),
-                                           this->m_grid.get_number_of_points_Y(),
-                                           this->m_grid.get_number_of_points_Z());
+    this->m_dust.read_dust_species_density(this->m_grid->get_number_of_points_X(),
+                                           this->m_grid->get_number_of_points_Y(),
+                                           this->m_grid->get_number_of_points_Z());
     //Then, we read the opacities meta file.
     //  This function also read each dustkappa_* file for each specie name.
     //  It's going to remap and interpolate the readed values according to the frequencies domain
     this->m_dust.read_opacities_meta(this->m_frequencies.get_frequencies());
     //The last process for the dust is to initialize the temperatures of each specie in the grid
-    this->m_dust.initialize_specie_temperature(this->m_grid.get_number_of_points_X(),
-                                               this->m_grid.get_number_of_points_Y(),
-                                               this->m_grid.get_number_of_points_Z());
+    this->m_dust.initialize_specie_temperature(this->m_grid->get_number_of_points_X(),
+                                               this->m_grid->get_number_of_points_Y(),
+                                               this->m_grid->get_number_of_points_Z());
 
     //We calculate the temperatures DB. These values are precalculated temperatures that we are going to use in the simulation.
     this->m_emissivity.generate_emissivity_table(simulation_parameters,
@@ -81,17 +85,16 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                          simulation_parameters["ntemp"]);
     //When the m_photons end, we calculate the temperature of each dust specie from the energy in each cell of the grid
     this->calculate_dust_temperature();
-    //To end the process, we write the temperatures output file
-    //TODO : Cambiar nombre métdo a dust_temperatures
+    //To end the process, we write the temperatures output filex
     this->write_dust_temperatures_file();
 }
 
 void monte_carlo::write_dust_temperatures_file(){
     std::ofstream temperatures_file("dust_temperature.dat");
     for (int iSpecie = 0; iSpecie < m_dust.get_number_of_dust_species(); ++iSpecie) {
-        for (int i = 0; i < m_grid.get_number_of_points_X(); ++i) {
-            for (int j = 0; j < m_grid.get_number_of_points_Y(); ++j) {
-                for (int k = 0; k < m_grid.get_number_of_points_Z(); ++k) {
+        for (int i = 0; i < m_grid->get_number_of_points_X(); ++i) {
+            for (int j = 0; j < m_grid->get_number_of_points_Y(); ++j) {
+                for (int k = 0; k < m_grid->get_number_of_points_Z(); ++k) {
                     temperatures_file << m_dust.get_dust_species()[iSpecie].get_temperature()[k][j][i] << "\n";
                 }
             }
@@ -104,10 +107,10 @@ void monte_carlo::calculate_dust_temperature(){
     double cumulated_energy, temp;
     //When the m_photons end, we calculate the temperature of each dust specie from the energy in each cell of the grid
     for (int iSpecie = 0; iSpecie < this->m_dust.get_number_of_dust_species(); ++iSpecie) {
-        for (int i = 0; i < this->m_grid.get_number_of_points_X(); ++i) {
-            for (int j = 0; j < this->m_grid.get_number_of_points_Y(); ++j) {
-                for (int k = 0; k < this->m_grid.get_number_of_points_Z(); ++k) {
-                    cumulated_energy = this->m_dust.get_dust_species()[iSpecie].get_cumulative_energy()[k][j][i] / (this->m_dust.get_dust_species()[iSpecie].get_densities()[k][j][i] * this->m_grid.get_cell_volume());
+        for (int i = 0; i < this->m_grid->get_number_of_points_X(); ++i) {
+            for (int j = 0; j < this->m_grid->get_number_of_points_Y(); ++j) {
+                for (int k = 0; k < this->m_grid->get_number_of_points_Z(); ++k) {
+                    cumulated_energy = this->m_dust.get_dust_species()[iSpecie].get_cumulative_energy()[k][j][i] / (this->m_dust.get_dust_species()[iSpecie].get_densities()[k][j][i] * this->m_grid->get_cell_volume());
                     if (cumulated_energy <= 0){
                         m_dust.set_null_temperature(iSpecie, i, j, k);
                     }
@@ -374,7 +377,7 @@ void monte_carlo::add_temperature_decoupled(photon& photon_i){
     iz = photon_i.get_grid_position()[2];
     double cumen, temperature;
     for (int iSpec = 0; iSpec < m_dust.get_number_of_dust_species(); ++iSpec) {
-        cumen = m_dust.get_dust_species()[iSpec].get_cumulative_energy()[iz][iy][ix] / (m_dust.get_dust_species()[iSpec].get_densities()[iz][iy][ix] * m_grid.get_cell_volume());
+        cumen = m_dust.get_dust_species()[iSpec].get_cumulative_energy()[iz][iy][ix] / (m_dust.get_dust_species()[iSpec].get_densities()[iz][iy][ix] * m_grid->get_cell_volume());
         temperature = m_emissivity.compute_dust_temp_energy(cumen, iSpec);
         m_dust.set_specie_temperature_at_position(iSpec, ix, iy, iz, temperature);
     }
@@ -411,12 +414,12 @@ void monte_carlo::move(photon& photon_i, std::mt19937& generator, std::uniform_r
         photon_i.set_prev_ray_position();
         photon_i.set_prev_grid_position();
         //Then we calculate the minor distance to move to the next cell of the grid
-        minor_distance = photon_i.advance_next_position(this -> m_grid.get_number_of_points_X(),
-                                                        this -> m_grid.get_number_of_points_Y(),
-                                                        this -> m_grid.get_number_of_points_Z(),
-                                                        this -> m_grid.get_x_points(),
-                                                        this -> m_grid.get_y_points(),
-                                                        this -> m_grid.get_z_points());
+        minor_distance = photon_i.advance_next_position(this -> m_grid->get_number_of_points_X(),
+                                                        this -> m_grid->get_number_of_points_Y(),
+                                                        this -> m_grid->get_number_of_points_Z(),
+                                                        this -> m_grid->get_x_points(),
+                                                        this -> m_grid->get_y_points(),
+                                                        this -> m_grid->get_z_points());
         photon_i.calculate_opacity_coefficients(minor_distance,
                                                       this -> m_dust.get_number_of_dust_species(),
                                                       this -> m_dust.get_dust_species());
@@ -464,8 +467,7 @@ void monte_carlo::initialize_cartesian_regular_photons(std::mt19937& generator, 
                                       ray_frequency,
                                       m_stars.get_stars_information()[star].get_star_position());
         //We set the grid position of the photon
-        this->m_photons[i].set_grid_position(this->m_grid.found_point_cartesian_regular(
-                this->m_photons[i].get_ray_position()));
+        this->m_photons[i].set_grid_position(this->m_grid->found_point(this->m_photons[i].get_ray_position()));
         //We get a random direction for the photon
         this ->get_random_direction(this -> m_photons[i],generator,uniform_zero_one_distribution);
     }

@@ -9,6 +9,8 @@
 #include <stars.hh>
 #include <emissivity.hh>
 
+#include <general_grid.hh>
+
 /*
 std::map<std::string,double> read_main_file();
 std::vector<std::string> tokenize(std::string s, std::string del = " ");
@@ -23,8 +25,10 @@ int main() {
     std::cout << "INICIANDO PRUEBAS" << std::endl;
 
     monte_carlo mc;
-    //mc.do_monte_carlo_therm_regular_cartesian_grid();
     mc.do_monte_carlo_therm_regular_cartesian_grid();
+    //mc.do_monte_carlo_therm_regular_cartesian_grid();
+    //general_grid *grid = new cartesian_regular_grid();
+    //std::cout << grid ->get_number_of_points_X() << std::endl;
 
     //std::vector<double> prueba = {0.0,0.3,0.8,1.0};
     //std::cout << common::hunt(prueba,4,0.5,2) << std::endl;

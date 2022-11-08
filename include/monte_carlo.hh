@@ -7,7 +7,8 @@
 #include <iostream>
 
 #include <common.hh>
-#include <grid.hh>
+//#include <grid.hh>
+#include <cartesian_regular_grid.hh>
 #include <frequencies.hh>
 #include <stars.hh>
 #include <dust.hh>
@@ -19,7 +20,8 @@ class monte_carlo {
 private:
 
     //Grid object
-    grid m_grid;
+    //grid m_grid;
+    general_grid *m_grid;
     //Frequencies object
     frequencies m_frequencies;
     //Stars object

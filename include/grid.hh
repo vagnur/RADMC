@@ -57,6 +57,8 @@ public:
     //Output : It has no output, but it's going to store the calculated deltas in the object
     void calculate_points_delta(void);
 
+    double get_cell_volume() const;
+
     //Getter for each vector dimension of the grid
     const std::vector<double>&get_x_points() const;
     const std::vector<double>&get_y_points() const;
@@ -67,12 +69,8 @@ public:
     int get_number_of_points_Y() const;
     int get_number_of_points_Z() const;
 
-
-
     //Destructor of the class
     ~grid(void);
-
-    double get_cell_volume() const;
 };
 
 #endif //RADMC_GRID_HH

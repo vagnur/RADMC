@@ -3,7 +3,7 @@ TARGET=GPURADMC
 CXX=g++
 CXXFLAGS=-std=c++14 -g -ggdb -Wall -O3
 INCLUDE=-I./include
-OBJS=obj/photon.o obj/grid.o obj/emissivity.o obj/common.o obj/dust_specie.o obj/dust.o obj/star.o obj/stars.o obj/frequencies.o obj/monte_carlo.o obj/radmc.o
+OBJS=obj/photon.o obj/general_grid.o obj/regular_grid.o obj/cartesian_regular_grid.o obj/emissivity.o obj/common.o obj/dust_specie.o obj/dust.o obj/star.o obj/stars.o obj/frequencies.o obj/monte_carlo.o obj/radmc.o
 
 all:
 	 make $(TARGET)
@@ -14,7 +14,13 @@ $(TARGET):$(OBJS)
 obj/photon.o:src/photon.cc include/photon.hh
 				$(CXX) $< -c -o $@ $(CXXFLAGS) $(INCLUDE)
 
-obj/grid.o:src/grid.cc include/grid.hh
+obj/general_grid.o:src/general_grid.cc include/general_grid.hh
+				$(CXX) $< -c -o $@ $(CXXFLAGS) $(INCLUDE)
+
+obj/regular_grid.o:src/regular_grid.cc include/regular_grid.hh
+				$(CXX) $< -c -o $@ $(CXXFLAGS) $(INCLUDE)
+
+obj/cartesian_regular_grid.o:src/cartesian_regular_grid.cc include/cartesian_regular_grid.hh
 				$(CXX) $< -c -o $@ $(CXXFLAGS) $(INCLUDE)
 
 obj/emissivity.o:src/emissivity.cc include/emissivity.hh

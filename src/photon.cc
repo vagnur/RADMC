@@ -51,7 +51,6 @@ photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int 
     this->distance[0] = (this->cell_walls[0] - this->ray_position[0]) / this->direction[0];
     this->distance[1] = (this->cell_walls[1] - this->ray_position[1]) / this->direction[1];
     this->distance[2] = (this->cell_walls[2] - this->ray_position[2]) / this->direction[2];
-
     double min_distance = std::min(std::min(distance[0], distance[1]), distance[2]);
     int count = 0;
     std::vector<int> indexes = {-1, -1, -1};
@@ -106,7 +105,7 @@ void photon::calculate_opacity_coefficients(double minor_distance, int number_of
 
     for (int i = 0; i < number_of_species; ++i) {
         //We obtain the absorption opacity and the scattering opacity, then we do that value times the
-        //  density and we accumulate the result
+        //  density, and we accumulate the result
 
         //this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->frequency_index];
         //this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->frequency_index];

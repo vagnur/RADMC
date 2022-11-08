@@ -83,7 +83,6 @@ std::vector<int> grid::found_point_cartesian_regular(const std::vector<double>& 
     grid_points[1] = std::floor(ray_position[1] / this -> diference_y) + (this -> number_of_points_y / 2);
     grid_points[2] = std::floor(ray_position[2] / this -> diference_z) + (this -> number_of_points_z / 2);
     return grid_points;
-
 }
 
 void grid::calculate_points_delta(void){
