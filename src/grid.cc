@@ -8,7 +8,7 @@ void grid::initialize_cartesian_regular(void){
     this -> type = "cartesian";
     //Variables to store the metadata from the input file
     int i_format,grid_style,coord_system,grid_info,amount_x,amount_y,amount_z;
-    //This variables are used to indicate which coordinates are present in the file
+    //These variables are used to indicate which coordinates are present in the file
     bool include_x,include_y,include_z;
     //Variable to store the readed value
     double coordinate_value;

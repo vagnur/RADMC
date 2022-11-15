@@ -53,7 +53,7 @@ public:
     //Input: int number_of_species -> number of dust species
     //       int number_of_temperatures -> number of temperatures
     //       vector freq_dnu -> Vector with the mean frequencies
-    void compute_derivate(int number_of_species, int number_of_temperatures, const std::vector<double>& freq_dnu);
+    void compute_derivative(int number_of_species, int number_of_temperatures, const std::vector<double>& freq_dnu);
 
     //This function generate the absorption event of each frequency. This function is called for each specie at each temperature
     //Input: double temp -> The temperature that is going to be used for the black body planck function

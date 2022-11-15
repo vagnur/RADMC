@@ -109,8 +109,8 @@ void photon::calculate_opacity_coefficients(double minor_distance, int number_of
 
         //this->alpha_A_specie[i] = densities[i][iz][iy][ix] * kappa_A[i][this->frequency_index];
         //this->alpha_S_specie[i] = densities[i][iz][iy][ix] * kappa_S[i][this->frequency_index];
-        this -> alpha_A_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_absorption_interpoled()[this->frequency_index];
-        this -> alpha_S_specie[i] = dust_species_information[i].get_densities()[iz][iy][ix] * dust_species_information[i].get_kappa_scattering_interpoled()[this->frequency_index];
+        this -> alpha_A_specie[i] = dust_species_information[i].get_densities()[iz][ix][iy] * dust_species_information[i].get_kappa_absorption_interpoled()[this->frequency_index];
+        this -> alpha_S_specie[i] = dust_species_information[i].get_densities()[iz][ix][iy] * dust_species_information[i].get_kappa_scattering_interpoled()[this->frequency_index];
         opacity_coefficient_alpha_A_total = opacity_coefficient_alpha_A_total + this->alpha_A_specie[i];
         opacity_coefficient_alpha_S_total = opacity_coefficient_alpha_S_total + this->alpha_S_specie[i];
     }
@@ -318,7 +318,7 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     //this->ray_position[2] = star_position[2];
     //this->grid_position[0] = this->found_point(ray_position[0], "cartesian", number_of_grid_points[0], difference[0]);
     //this->grid_position[1] = this->found_point(ray_position[1], "cartesian", number_of_grid_points[1], difference[1]);
-    //this->grid_position[2] = this->found_point(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
+    //this->grid_position[2] = this->found_ray_position_in_grid(ray_position[2], "cartesian", number_of_grid_points[2], difference[2]);
     //We get a random direction for the photon
     this->get_random_direction(generator, uniform_zero_one_distribution);
     //TODO : Crear código para generar los valores aleatorios, conversar con rannou
@@ -343,13 +343,13 @@ void photon::identify_star(std::mt19937& generator, std::uniform_real_distributi
  */
 
 /*
-int photon::found_point(double x, std::string type, int number_of_points, double difference) {
+int photon::found_ray_position_in_grid(double x, std::string type, int number_of_points, double difference) {
     return std::floor(x / difference) + (number_of_points / 2);
 }
  */
 
 /*
-void photon::chek_unity_vector(double x, double y, double z) {
+void photon::check_unity_vector(double x, double y, double z) {
     double module = std::sqrt((x * x) + (y * y) + (z * z));
     if (std::fabs(module - 1.0) > 1e-6) {
         std::cerr << "ERROR : Error unity vector " << x << " " << y << " " << z << std::endl;
@@ -385,7 +385,7 @@ void photon::walk_full_path(){
             this -> get_random_direction();
         }
         this -> calculate_tau_path();
-        this -> move();
+        this -> move_photon();
     }
 }
 */
@@ -407,7 +407,7 @@ void photon::walk_next_event(std::mt19937& generator, std::uniform_real_distribu
         this->prev_grid_position[1] = this->grid_position[1];
         this->prev_grid_position[2] = this->grid_position[2];
 
-        //Then we calculate the minor distance to move to the next cell of the grid
+        //Then we calculate the minor distance to move_photon to the next cell of the grid
         minor_distance = this->advance_next_position(number_of_points_X, number_of_points_Y, number_of_points_Z, grid_cell_walls_x, grid_cell_walls_y,
                                                      grid_cell_walls_z);
         this->calculate_opacity_coefficients(minor_distance, number_of_species, dust_specie_information);
@@ -726,7 +726,7 @@ void photon::get_henvey_greenstein_direction(std::mt19937& generator, std::unifo
         newx = dx * vx - dy * vy;
         newy = dy * vx + dx * vy;
     }
-    common::chek_unity_vector(newx, newy, newz);
+    common::check_unity_vector(newx, newy, newz);
     //get orientations
     //obtain orientations. It is 0 (left,down) or 1 (right, up)
     int ix = std::floor(newx) + 1.0;
@@ -780,7 +780,7 @@ void photon::get_random_direction(std::mt19937& generator, std::uniform_real_dis
     diry = diry * linv;
     dirz = dirz * linv;
 
-    common::chek_unity_vector(dirx, diry, dirz);
+    common::check_unity_vector(dirx, diry, dirz);
 
     ix = std::floor(dirx) + 1.0;
     iy = std::floor(diry) + 1.0;
@@ -874,7 +874,7 @@ void photon::get_henvey_greenstein_direction(std::mt19937 &generator,
         dir_z = vz;
     }
 
-    common::chek_unity_vector(dir_x, dir_y, dir_z);
+    common::check_unity_vector(dir_x, dir_y, dir_z);
     //get orientations
     //obtain orientations. It is 0 (left,down) or 1 (right, up)
     int ix = std::floor(dir_x) + 1.0;

@@ -213,9 +213,9 @@ void stars::jitter_stars(std::vector<double> cell_walls_x, std::vector<double> c
     small_x = 0.48957949203816064943e-12;
     small_y = 0.38160649492048957394e-12;
     small_z = 0.64943484920957938160e-12;
-    szx = cell_walls_x[number_of_points_x] - cell_walls_x[0];
-    szy = cell_walls_y[number_of_points_y] - cell_walls_y[0];
-    szz = cell_walls_z[number_of_points_z] - cell_walls_z[0];
+    szx = cell_walls_x[number_of_points_x-1] - cell_walls_x[0];
+    szy = cell_walls_y[number_of_points_y-1] - cell_walls_y[0];
+    szz = cell_walls_z[number_of_points_z-1] - cell_walls_z[0];
     std::vector<double> star_position;
     for (int i = 0; i < this -> number_of_stars; ++i) {
         star_position = this -> stars_information[i].get_star_position();
@@ -253,7 +253,6 @@ const std::vector<double> &stars::get_cumulative_luminosity() const {
 int stars::identify_star(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution){
                            //int number_of_stars, const std::vector<double> &luminosities_cum) {
     double star_lum = uniform_zero_one_distribution(generator);
-    //TODO : Obtener luminosities cum
     int star = common::hunt(this -> cumulative_luminosity, number_of_stars + 1, star_lum, number_of_stars);
     return star;
 }

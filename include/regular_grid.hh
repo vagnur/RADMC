@@ -22,11 +22,10 @@ protected:
     std::vector<double> x_points;
     std::vector<double> y_points;
     std::vector<double> z_points;
-    double cell_volume;
 
 public:
 
-    void initialize_grid();
+    void read_grid_file();
 
     //Getters
     const std::vector<double>&get_x_points() const;
@@ -35,7 +34,6 @@ public:
     int get_number_of_points_X() const;
     int get_number_of_points_Y() const;
     int get_number_of_points_Z() const;
-    double get_cell_volume() const;
 
 };
 

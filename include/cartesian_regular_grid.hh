@@ -8,13 +8,15 @@ class cartesian_regular_grid: public regular_grid {
 
 private:
 
-
+    double cell_volume;
 
 public:
 
     cartesian_regular_grid();
 
-    //Method that calculate the delta diference in each dimension
+    void initialize_grid();
+
+    //Method that calculate the delta difference in each dimension
     //Input : It has no input
     //Output : It has no output, but it's going to store the calculated deltas in the object
     void calculate_points_delta(void);
@@ -22,9 +24,12 @@ public:
     //Method to found a ray position in the grid
     //Input : Vector ray_position -> Vector with the ray positions at X,Y and Z
     //Output : Vector with the grid position of the ray at X,Y and Z
-    std::vector<int> found_point(const std::vector<double>& ray_position);
+    std::vector<int> found_ray_position_in_grid(const std::vector<double>& ray_position);
+
 
     void calculate_cell_volume();
+
+    double get_cell_volume(std::vector<int> grid_position) const;
 
     ~cartesian_regular_grid();
 };

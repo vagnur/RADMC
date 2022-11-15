@@ -1,6 +1,6 @@
 #include "regular_grid.hh"
 
-void regular_grid::initialize_grid() {
+void regular_grid::read_grid_file() {
     //Variables to store the metadata from the input file
     int i_format,grid_style,coord_system,grid_info,amount_x,amount_y,amount_z;
     //These variables are used to indicate which coordinates are present in the file
@@ -33,9 +33,9 @@ void regular_grid::initialize_grid() {
     input_file >> amount_x;
     input_file >> amount_y;
     input_file >> amount_z;
-    this -> number_of_points_x = amount_x;
-    this -> number_of_points_y = amount_y;
-    this -> number_of_points_z = amount_z;
+    this -> number_of_points_x = amount_x+1;
+    this -> number_of_points_y = amount_y+1;
+    this -> number_of_points_z = amount_z+1;
     //To finish the process, we read the values of each coordinate that are present in the file
     //We make space for the values
     this -> x_points.resize(amount_x+1);
@@ -91,8 +91,4 @@ int regular_grid::get_number_of_points_Y() const {
 
 int regular_grid::get_number_of_points_Z() const {
     return this -> number_of_points_z;
-}
-
-double regular_grid::get_cell_volume() const {
-    return cell_volume;
 }

@@ -20,6 +20,12 @@ private:
     static constexpr double light_speed_microns = 2.99792458e14;
     //4 times PI
     static constexpr double four_pi = 12.5663706143591729538505735331;
+    //PI/2
+    static constexpr double pi_half = 1.57079632679489661923132169164;
+    //PI
+    static constexpr double pi = 3.14159265358979323846264338328;
+    //2 times PI
+    static constexpr double two_pi = 6.28318530717958647692528676656;
 
 public:
 
@@ -79,7 +85,13 @@ public:
     //Output : a vector with the substrings founded in the split process
     static std::vector<std::string> tokenize(std::string s, std::string del = " ");
 
-    static void chek_unity_vector(double x, double y, double z);
+    static void check_unity_vector(double x, double y, double z);
+
+    static double get_pi_half();
+
+    static double get_pi();
+
+    static double get_two_pi();
 };
 
 #endif //RADMC_COMMON_HH

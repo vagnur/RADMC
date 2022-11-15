@@ -8,6 +8,7 @@
 #include <common.hh>
 #include <stars.hh>
 #include <emissivity.hh>
+#include <spherical_regular_grid.hh>
 
 #include <general_grid.hh>
 
@@ -26,6 +27,19 @@ int main() {
 
     monte_carlo mc;
     mc.do_monte_carlo_therm_regular_cartesian_grid();
+
+    //309195741320000
+    //326123358038800.0625
+
+    /*
+    general_grid *grid = new spherical_regular_grid();
+    grid->initialize_grid();
+
+    std::cout << grid->found_ray_position_in_grid({346123358038800,1.25719755,0.01})[0] << std::endl;
+    std::cout << grid->found_ray_position_in_grid({346123358038800,1.25719755,0.01})[1] << std::endl;
+    std::cout << grid->found_ray_position_in_grid({346123358038800,1.25719755,0.01})[2] << std::endl;
+    */
+
     //mc.do_monte_carlo_therm_regular_cartesian_grid();
     //general_grid *grid = new cartesian_regular_grid();
     //std::cout << grid ->get_number_of_points_X() << std::endl;
@@ -104,7 +118,7 @@ int main() {
 
     emissivity emis;
     emis.generate_emissivity_table(simulation_parameters,number_of_dust_species,number_of_frequencies,abs_interpol,freq_nu,freq_dnu);
-    emis.compute_derivate(number_of_dust_species,simulation_parameters["ntemp"],number_of_frequencies,freq_dnu);
+    emis.compute_derivative(number_of_dust_species,simulation_parameters["ntemp"],number_of_frequencies,freq_dnu);
     */
 
     /*

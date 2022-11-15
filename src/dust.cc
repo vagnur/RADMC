@@ -35,14 +35,14 @@ void dust::read_dust_species_density(int number_of_point_x,int number_of_point_y
     //Then we read the densities of each specie
     for (int specie = 0; specie < number_of_species; ++specie) {
         //We make space in the 3d vector
-        specie_density.resize(number_of_point_z, std::vector<std::vector<double>>(number_of_point_y, std::vector<double>(number_of_point_x)));
-        for (int i = 0; i < number_of_point_z; ++i) {
-            for (int j = 0; j < number_of_point_y; ++j) {
-                for (int k = 0; k < number_of_point_x; ++k) {
+        specie_density.resize(number_of_point_z, std::vector<std::vector<double>>(number_of_point_x, std::vector<double>(number_of_point_y)));
+        for (int k = 0; k < number_of_point_z; ++k) {
+            for (int i = 0; i < number_of_point_x; ++i) {
+                for (int j = 0; j < number_of_point_y; ++j) {
                     //And we store the density present in the point [x,y,z]
                     //TODO : Esto funciona para grillas regulares cartesianas 3D. El método no es generalizable creo, pero hay que hacer el método para otras grillas
                     input_file >> density;
-                    specie_density[i][j][k] = density;
+                    specie_density[k][i][j] = density;
                 }
             }
         }

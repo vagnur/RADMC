@@ -4,7 +4,13 @@ cartesian_regular_grid::cartesian_regular_grid() {
     ;
 }
 
-std::vector<int> cartesian_regular_grid::found_point(const std::vector<double>& ray_position){
+void cartesian_regular_grid::initialize_grid() {
+    this -> read_grid_file();
+    this -> calculate_points_delta();
+    this -> calculate_cell_volume();
+}
+
+std::vector<int> cartesian_regular_grid::found_ray_position_in_grid(const std::vector<double>& ray_position){
     //This method assumes a pair number of points
     std::vector<int> grid_points(3);
     grid_points[0] = std::floor(ray_position[0] / this -> diference_x) + (this -> number_of_points_x / 2);
@@ -21,6 +27,10 @@ void cartesian_regular_grid::calculate_points_delta(void){
 
 void cartesian_regular_grid::calculate_cell_volume() {
     this -> cell_volume = this -> diference_x * this -> diference_y * this -> diference_z;
+}
+
+double cartesian_regular_grid::get_cell_volume(std::vector<int> grid_position) const {
+    return this -> cell_volume;
 }
 
 cartesian_regular_grid::~cartesian_regular_grid() {

@@ -52,7 +52,7 @@ void emissivity::generate_emissivity_table(std::map<std::string,double>& simulat
 }
 
 //TODO : Verificar vectores que se usan en la simulacion de los calculados para almacenar en el objeto de la clase
-void emissivity::compute_derivate(int number_of_species, int number_of_temperatures, const std::vector<double>& freq_dnu) {
+void emissivity::compute_derivative(int number_of_species, int number_of_temperatures, const std::vector<double>& freq_dnu) {
     int number_of_frequencies = freq_dnu.size();
     //This vector is going to represent the emissivity of each specie at each temperature
     std::vector<double> diffemis(number_of_frequencies);

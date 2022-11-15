@@ -35,11 +35,11 @@ private:
     bool is_scattering;
     //Ray position of the photon
     std::vector<double> ray_position;
-    //When we are going to move the photon, we need the previous ray position
+    //When we are going to move_photon the photon, we need the previous ray position
     std::vector<double> prev_ray_position;
     //Photon position in the grid
     std::vector<int> grid_position;
-    //When we are going to move the photon, we need the previous grid position
+    //When we are going to move_photon the photon, we need the previous grid position
     std::vector<int> prev_grid_position;
     //Orientation of the photon
     //TODO : dar ejemplo
@@ -104,7 +104,7 @@ public:
     void obtain_cell_walls(const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
                            const std::vector<double> &grid_cell_walls_z);
 
-    //Method to move the photon to the next position
+    //Method to move_photon the photon to the next position
     //Input : number_of_points_D -> Number of points in each D dimension
     //        grid_cell_wals_D - > Vector with the walls of the grid in each D dimension
     //Output : It return the minor distance (double) and the photon update the relevant vector with the new position

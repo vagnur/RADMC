@@ -47,7 +47,7 @@ public:
     int get_random_frequency(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution,
                              const std::vector<double> &star_cumulative_spectrum);
 
-    //Getter for the number of frequency points
+    //Getters
     int get_number_frequency_points() const;
     const std::vector<double>& get_frequencies() const;
     const std::vector<double>& get_mean_intensity() const;
