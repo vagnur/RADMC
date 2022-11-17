@@ -7,6 +7,11 @@
 #include <star.hh>
 #include <dust_species.hh>
 
+/*
+ * Each object of this class is going to be a photon of the simulation. The photon moves in the grid, and is going to
+ * interact with the dust species that it met on the way.
+ */
+
 class photon {
 
 private:

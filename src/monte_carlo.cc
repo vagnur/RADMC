@@ -16,8 +16,8 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     // ************ SETUP OF THE SIMULATION ENVIRONMENT **********************
 
     //We read the regular cartesian grid from the "amr_grid.inp" file
-    this->m_grid = new cartesian_regular_grid();
-    //this -> m_grid = new spherical_regular_grid();
+    //this->m_grid = new cartesian_regular_grid();
+    this -> m_grid = new spherical_regular_grid();
     //this->m_grid.initialize_cartesian_regular();
     this -> m_grid -> initialize_grid();
 

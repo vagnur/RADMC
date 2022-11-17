@@ -224,6 +224,7 @@ void stars::jitter_stars(std::vector<double> cell_walls_x, std::vector<double> c
         star_position[2] = star_position[2] + szz * small_z;
         this -> stars_information[i].set_star_position(star_position);
     }
+
 }
 
 void stars::fix_luminosities() {

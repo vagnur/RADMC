@@ -40,7 +40,6 @@ void dust::read_dust_species_density(int number_of_point_x,int number_of_point_y
             for (int i = 0; i < number_of_point_x; ++i) {
                 for (int j = 0; j < number_of_point_y; ++j) {
                     //And we store the density present in the point [x,y,z]
-                    //TODO : Esto funciona para grillas regulares cartesianas 3D. El método no es generalizable creo, pero hay que hacer el método para otras grillas
                     input_file >> density;
                     specie_density[k][i][j] = density;
                 }

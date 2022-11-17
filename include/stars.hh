@@ -59,24 +59,33 @@ public:
     //Output : It has no output, but we are going to store the cumulative spectrum in the class atribute
     void calculate_total_luminosities(const std::vector<double>& mean_intensity);
 
-
+    //This method calculate the energy of each star
+    //Input : int number of photons -> Number of photons in the simulation
+    //Output : It has no output, but each star is going to store it energy
     void calculate_energy(int number_of_photons);
 
+    //
     void fix_luminosities();
+
+    //This method move the star just a little in order to avoid having a star exactly in a wall of the grid
+    //Input : vector cell_walls_D -> Wells of the grid in each D dimension
+    //Output : It has no output, but each star is going to have a new position
+    void jitter_stars(std::vector<double> cell_walls_x, std::vector<double> cell_walls_y, std::vector<double> cell_walls_z);
+
+    //Method that identify the star source from where the photon is going to be launched
+    //Input : generator and uniform_zer_one_distribution are objects to generate random number (search the object type for more info)
+    //Output : Int that is going to be the index of the star in the vector star_information
+    int identify_star(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution);
 
     //Getter for the stars
     const std::vector<star>& get_stars_information(void) const;
-
     const std::vector<double>& get_cumulative_luminosity() const;
-
     int get_number_of_stars() const;
 
     //Empty destructor
 	~stars(void);
 
-    void jitter_stars(std::vector<double> cell_walls_x, std::vector<double> cell_walls_y, std::vector<double> cell_walls_z);
 
-    int identify_star(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution);
 };
 
 #endif //RADMC_STARS_HH

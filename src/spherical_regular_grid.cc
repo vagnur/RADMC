@@ -84,6 +84,6 @@ spherical_regular_grid::~spherical_regular_grid() {
 }
 
 double spherical_regular_grid::get_cell_volume(std::vector<int> grid_position) const{
-    double volumen = (1.0/3.0) * (std::pow(this -> x_points[grid_position[0]+1],3) - std::pow(this -> x_points[grid_position[0]],3)) * (std::cos(this -> y_points[grid_position[1]]) - std::cos(this -> y_points[grid_position[1]+1])) * (this -> z_points[grid_position[2]+1] - this -> z_points[grid_position[2]]);
-    return volumen;
+    double volume = (1.0/3.0) * (std::pow(this -> x_points[grid_position[0]+1],3) - std::pow(this -> x_points[grid_position[0]],3)) * (std::cos(this -> y_points[grid_position[1]]) - std::cos(this -> y_points[grid_position[1]+1])) * (this -> z_points[grid_position[2]+1] - this -> z_points[grid_position[2]]);
+    return volume;
 }

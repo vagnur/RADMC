@@ -85,12 +85,14 @@ public:
     //Output : a vector with the substrings founded in the split process
     static std::vector<std::string> tokenize(std::string s, std::string del = " ");
 
+    //Method to check of the vector in the position x,y,z is unity or not
+    //Input : double D -> Value of the point the D dimension
+    //Output : It has no output, but the simulation is going to end if the vector is not unity
     static void check_unity_vector(double x, double y, double z);
 
+    //Getter
     static double get_pi_half();
-
     static double get_pi();
-
     static double get_two_pi();
 };
 
