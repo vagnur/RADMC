@@ -129,8 +129,6 @@ double emissivity::compute_dust_temp_energy(double energy, int specie){
         exit(0);
     }
 
-    //TODO : Creo que debería ser else if
-    //else if (itemp <= 1) {
     if (itemp <= -1) {
         //Temperature presumably below lowest temperature in the database
         eps = energy / db_enertemp[specie][0];

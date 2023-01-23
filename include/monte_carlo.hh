@@ -27,7 +27,6 @@ class monte_carlo {
 private:
 
     //Grid object
-    //grid m_grid;
     general_grid *m_grid;
     //Frequencies object
     frequencies m_frequencies;

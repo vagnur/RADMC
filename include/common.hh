@@ -94,6 +94,10 @@ public:
     static double get_pi_half();
     static double get_pi();
     static double get_two_pi();
+
+    static std::vector<double> convert_cartesian_to_spherical_coordinates(double x, double y, double z);
+
+    static int sign(double x);
 };
 
 #endif //RADMC_COMMON_HH

@@ -56,6 +56,7 @@ private:
     std::vector<double> cell_walls;
     //Distance that the photon is going to "walk"
     std::vector<double> distance;
+    double min_distance;
     //Information of the dust specie in the cell of the photn
     //TODO : Dejar en dust specie parece xd
     std::vector<double> dust_specie_energy;
@@ -77,7 +78,7 @@ public:
     //Output : A new photon to use in the MC simulation
     photon(std::mt19937 &generator, std::uniform_real_distribution<> &uniform_zero_one_distribution,
            int number_of_species, int number_of_frequencies, int star_source, int frequency_index,
-           const std::vector<double> &star_ray_position);
+           const std::vector<double> &star_ray_position,int number_of_points_x, int number_of_points_y, int number_of_points_z);
 
     //
     //Input : generator and uniform_zer_one_distribution are objects to generate random number (search the object type for more info)
@@ -89,12 +90,10 @@ public:
     void is_on_grid(int number_of_points_x, int number_of_points_y, int number_of_points_z);
 
     //This method calculate the opacity coefficients that the vector is going to use for scattering and absorption in a cell of the grid
-    //Input : minor_distance -> The distance that the photon is going to walk
     //        number_of_species -> Number of dust species
     //        dust_species_information -> Vector with the information of each dust specie
     //Output : No output, but the photon is going to store relevant information in the opacity vectors
-    void calculate_opacity_coefficients(double minor_distance, int number_of_species,
-                                        const std::vector<dust_species>& dust_species_information);
+    void calculate_opacity_coefficients(int number_of_species, const std::vector<dust_species>& dust_species_information);
 
     //This method found the index of the specie that we are going to use for the scattering
     //Input : generator and uniform_zer_one_distribution are objects to generate random number (search the object type for more info)
@@ -103,6 +102,7 @@ public:
     int find_specie_to_scattering(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
                                   int number_of_species);
 
+    /*
     //Method to find the walls of the cell grid where the photon is
     //Input : grid_cell_wals_D - > Vector with the walls of the grid in each D dimension
     //Output : It has no output, but the photon is going to store the walls in each dimension
@@ -112,10 +112,11 @@ public:
     //Method to move_photon the photon to the next position
     //Input : number_of_points_D -> Number of points in each D dimension
     //        grid_cell_wals_D - > Vector with the walls of the grid in each D dimension
-    //Output : It return the minor distance (double) and the photon update the relevant vector with the new position
+    //Output : It returns the minor distance (double) and the photon update the relevant vector with the new position
     double advance_next_position(int number_of_points_X, int number_of_points_Y, int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
                                  const std::vector<double> &grid_cell_walls_y,
                                  const std::vector<double> &grid_cell_walls_z);
+    */
 
     //Method to update the ray position of the photon
     //Input : fraction -> Fraction of the movement
@@ -143,6 +144,7 @@ public:
     const std::vector<double> &get_temp_local() const;
     const std::vector<int> &get_prev_grid_position() const;
     const std::vector<double> &get_direction() const;
+    const std::vector<double> &get_cell_walls() const;
 
     //Setter
     void set_grid_position(const std::vector<int> &grid_position);
@@ -153,10 +155,15 @@ public:
     void set_frequency_index(int frequency_index);
     void set_orientation(const std::vector<int> &orientation);
     void set_direction(const std::vector<double> &direction);
+    void set_walls(const std::vector<double> &cell_walls);
+    void set_distance(const std::vector<double> distance);
+    void set_min_distance(double min_distance);
     void set_prev_ray_position();
     void set_prev_grid_position();
 
     ~photon(void);
+
+    const std::vector<int> &get_orientation() const;
 };
 
 

@@ -224,7 +224,6 @@ void stars::jitter_stars(std::vector<double> cell_walls_x, std::vector<double> c
         star_position[2] = star_position[2] + szz * small_z;
         this -> stars_information[i].set_star_position(star_position);
     }
-
 }
 
 void stars::fix_luminosities() {
@@ -256,4 +255,20 @@ int stars::identify_star(std::mt19937& generator, std::uniform_real_distribution
     double star_lum = uniform_zero_one_distribution(generator);
     int star = common::hunt(this -> cumulative_luminosity, number_of_stars + 1, star_lum, number_of_stars);
     return star;
+}
+
+void stars::fix_spherical_position(){
+    std::vector<double> new_position(3);
+    double r;
+    for (int i = 0; i < this -> number_of_stars; ++i) {
+        r = sqrt((this -> stars_information[i].get_star_position()[0]*this -> stars_information[i].get_star_position()[0])+(this -> stars_information[i].get_star_position()[1]*this -> stars_information[i].get_star_position()[1]));
+        new_position[0] = this -> stars_information[i].get_star_position()[0];
+        if(abs(this -> stars_information[i].get_star_position()[2]) < 1e-8*r){
+            new_position[2] = 1e-8 * r;
+        }
+        if(abs(this -> stars_information[i].get_star_position()[1]) < 1e-8*this -> stars_information[i].get_star_position()[0]) {
+            new_position[1] = 1e-8 * this->stars_information[i].get_star_position()[0];
+        }
+        this -> stars_information[i].set_star_position(new_position);
+    }
 }

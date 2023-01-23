@@ -250,6 +250,9 @@ std::vector<double> common::interpolation_function(std::vector<double> old_funct
 }
 
 int common::hunt(const std::vector<double>& xx, int n, double x, int jlo){
+    //TODO : Esta función se usa caleta pa lograr encontrar la posición más cercana al valor ingresado.
+    //TODO : Es demassiado divergente y carece de sentido, es mucho mejor hacer un vector que represente la probabilidad de encontar
+    //TODO : el elemento y tirar un valor aleatorio entre 1 y n.
     int jm, jhi, inc;
     int ascnd;
 
@@ -385,4 +388,36 @@ double common::get_two_pi() {
     return two_pi;
 }
 
+std::vector<double> common::convert_cartesian_to_spherical_coordinates(double x, double y, double z){
+    std::vector<double> spherical_coordinates(3);
+    double r, theta, phi;
+    r = sqrt((x*x)+(y*y)+(z*z));
+    theta = acos(z/(r+1e-199));
+    if(x == 0.0){
+        if(y >= 0.0){
+            phi = pi_half;
+        }
+        else{
+            phi = 3.0 * pi_half;
+        }
+    }
+    else{
+        phi = atan(y/x);
+        if(x > 0.0){
+            if(y < 0.0){
+                phi = phi + two_pi;
+            }
+        }
+        else{
+            phi = phi + pi;
+        }
+    }
+    spherical_coordinates[0] = r;
+    spherical_coordinates[1] = theta;
+    spherical_coordinates[2] = phi;
+    return spherical_coordinates;
+}
 
+int common::sign(double x) {
+    return (x >= 0) - (x < 0);
+}

@@ -3,7 +3,7 @@ TARGET=GPURADMC
 CXX=g++
 CXXFLAGS=-std=c++14 -g -ggdb -Wall -O3
 INCLUDE=-I./include
-OBJS=obj/photon.o obj/general_grid.o obj/regular_grid.o obj/cartesian_regular_grid.o obj/spherical_regular_grid.o obj/emissivity.o obj/common.o obj/dust_specie.o obj/dust.o obj/star.o obj/stars.o obj/frequencies.o obj/monte_carlo.o obj/radmc.o
+OBJS=obj/photon.o obj/general_grid.o obj/regular_grid.o obj/cartesian_regular_grid.o obj/emissivity.o obj/common.o obj/dust_specie.o obj/dust.o obj/star.o obj/stars.o obj/frequencies.o obj/monte_carlo.o obj/radmc.o
 
 all:
 	 make $(TARGET)

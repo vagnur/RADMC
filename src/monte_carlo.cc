@@ -13,12 +13,13 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     //  and its parameters
     std::map<std::string, double> simulation_parameters = read_main_file();
 
+    //TODO : Hay varios procesos que se podrían mejorar acá, en general no pasan de algoritmos de O(n³), y son muy divergentes
+    //TODO : no obstante, sólo se ejecutan 1 vez, por lo que lo importante es paralelizar a nivel de fotón
     // ************ SETUP OF THE SIMULATION ENVIRONMENT **********************
 
     //We read the regular cartesian grid from the "amr_grid.inp" file
-    //this->m_grid = new cartesian_regular_grid();
-    this -> m_grid = new spherical_regular_grid();
-    //this->m_grid.initialize_cartesian_regular();
+    this->m_grid = new cartesian_regular_grid();
+    //this -> m_grid = new spherical_regular_grid();
     this -> m_grid -> initialize_grid();
 
     //We read the frequencies from the "wavelength_mmakicron.inp" file, and we calculate
@@ -39,20 +40,22 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     this->m_stars.fix_luminosities();
     this->m_stars.jitter_stars(this->m_grid->get_x_points(), this->m_grid->get_y_points(),
                                this->m_grid->get_z_points());
-
+    if(this -> m_grid->get_grid_type() == "spherical"){
+       this -> m_stars.fix_spherical_position();
+    }
     //We read the dust information.
     //First, we read the "dust_density.inp" file, to obtain the density of the species in the grid
-    this->m_dust.read_dust_species_density(this->m_grid->get_number_of_points_X() - 1,
-                                           this->m_grid->get_number_of_points_Y() - 1,
-                                           this->m_grid->get_number_of_points_Z() - 1);
+    this->m_dust.read_dust_species_density(this->m_grid->get_number_of_points_X(),
+                                           this->m_grid->get_number_of_points_Y(),
+                                           this->m_grid->get_number_of_points_Z());
     //Then, we read the opacities meta file.
     //  This function also read each dustkappa_* file for each specie name.
     //  It's going to remap and interpolate the readed values according to the frequencies domain
     this->m_dust.read_opacities_meta(this->m_frequencies.get_frequencies());
     //The last process for the dust is to initialize the temperatures of each specie in the grid
-    this->m_dust.initialize_specie_temperature(this->m_grid->get_number_of_points_X() - 1,
-                                               this->m_grid->get_number_of_points_Y() - 1,
-                                               this->m_grid->get_number_of_points_Z() - 1);
+    this->m_dust.initialize_specie_temperature(this->m_grid->get_number_of_points_X(),
+                                               this->m_grid->get_number_of_points_Y(),
+                                               this->m_grid->get_number_of_points_Z());
 
     //We calculate the temperatures DB. These values are precalculated temperatures that we are going to use in the simulation.
     this->m_emissivity.generate_emissivity_table(simulation_parameters,
@@ -65,6 +68,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
                                           this->m_frequencies.get_mean_intensity());
     //With this, we end the setup process, and we proceed to run the m_photons
 
+    //TODO : Esto tiene que ser paralelizado
     // *********************** SIMULATION LOGIC *************************
 
     //First, we initialize the random number generators
@@ -127,7 +131,7 @@ void monte_carlo::calculate_dust_temperature(){
     }
 }
 
-void monte_carlo::launch_photons(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,int scattering_mode, int number_of_photons, int number_of_temperatures){
+void monte_carlo::launch_photons(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution, int scattering_mode, int number_of_photons, int number_of_temperatures){
     //We launch each photon
     for (int i = 0; i < number_of_photons; ++i) {
         //for (int i = 0; i < 10; ++i) {
@@ -160,9 +164,9 @@ void monte_carlo::launch_photons(std::mt19937& generator, std::uniform_real_dist
     }
 }
 
-void monte_carlo::get_henvey_greenstein_direction(photon &photon_i,std::mt19937 &generator,
-                                             std::uniform_real_distribution<> &uniform_zero_one_distribution,
-                                             const std::vector<double> &g) {
+void monte_carlo::get_henvey_greenstein_direction(photon &photon_i, std::mt19937 &generator,
+                                                                    std::uniform_real_distribution<> &uniform_zero_one_distribution,
+                                                                    const std::vector<double> &g) {
     //TODO : cambiar los pow cuando sean cuadrados
     int valuesOrientations[3] = {0,1,1};
     double g2,xi,dir_x,l2,dir_y,dir_z,linv;
@@ -350,7 +354,8 @@ int monte_carlo::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_dis
         }
     }
     std::vector<double> dbCumul(m_frequencies.get_number_frequency_points() + 1);
-    //TODO : intplt es siempre 1
+    //TODO : intplt es siempre 1, revisar original
+    //TODO : Es una parámetro de entrada del radmc.inp, no sale descrito en el manual excepto por un bug que indica que su default es 0 , no 1
     if (intplt == 1) {
         for (int inu = 0; inu < numCumul; ++inu) {
             dbCumul[inu] = (1.0 - eps) * m_emissivity.get_db_cumulnorm()[iSpec][iTemp][inu] + eps * m_emissivity.get_db_cumulnorm()[iSpec][iTemp + 1][inu];
@@ -410,22 +415,16 @@ void monte_carlo::divide_absorbed_energy(photon& photon_i){
 }
 
 void monte_carlo::move_photon(photon& photon_i, std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution){
-    double minor_distance, fraction, add_tmp, dum;
+    double fraction, add_tmp, dum;
     bool carry_on = true;
     while (carry_on) {
         //First we obtain the actual ray and grid position of the photon
         photon_i.set_prev_ray_position();
         photon_i.set_prev_grid_position();
-        //Then we calculate the minor distance to move_photon to the next cell of the grid
-        minor_distance = photon_i.advance_next_position(this -> m_grid->get_number_of_points_X() - 1,
-                                                        this -> m_grid->get_number_of_points_Y() - 1,
-                                                        this -> m_grid->get_number_of_points_Z() - 1,
-                                                        this -> m_grid->get_x_points(),
-                                                        this -> m_grid->get_y_points(),
-                                                        this -> m_grid->get_z_points());
-        photon_i.calculate_opacity_coefficients(minor_distance,
-                                                      this -> m_dust.get_number_of_dust_species(),
-                                                      this -> m_dust.get_dust_species());
+        //Then we move the photon to the next cell
+        m_grid -> calculate_photon_new_position(photon_i);
+        photon_i.calculate_opacity_coefficients(this -> m_dust.get_number_of_dust_species(),
+                                                this -> m_dust.get_dust_species());
         if (photon_i.get_tau_path_gone() + photon_i.get_dtau() > photon_i.get_tau_path_total()) {
             fraction = (photon_i.get_tau_path_total() - photon_i.get_tau_path_gone()) / photon_i.get_dtau();
             photon_i.update_ray_position(fraction);
@@ -453,6 +452,7 @@ void monte_carlo::move_photon(photon& photon_i, std::mt19937& generator, std::un
     photon_i.set_scattering_state(rn);
 }
 
+//TODO : Esto debiese funcionar para cualquier grilla regular, no solo la cartesiana
 void monte_carlo::initialize_cartesian_regular_photons(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution, int number_of_photons){
     this -> m_photons.resize(number_of_photons);
     int star, ray_frequency;
@@ -468,16 +468,117 @@ void monte_carlo::initialize_cartesian_regular_photons(std::mt19937& generator, 
                                       m_frequencies.get_number_frequency_points(),
                                       star,
                                       ray_frequency,
-                                      m_stars.get_stars_information()[star].get_star_position());
+                                      m_stars.get_stars_information()[star].get_star_position(),
+                                      m_grid->get_number_of_points_X(),
+                                      m_grid->get_number_of_points_Y(),
+                                      m_grid->get_number_of_points_Z());
         //We set the grid position of the photon
-        this->m_photons[i].set_grid_position(
-                this->m_grid->found_ray_position_in_grid(this->m_photons[i].get_ray_position()));
+        this->m_photons[i].set_grid_position(this->m_grid->found_ray_position_in_grid(this->m_photons[i].get_ray_position()));
+        this->m_photons[i].is_on_grid(m_grid->get_number_of_points_X(),
+                                      m_grid->get_number_of_points_Y(),
+                                      m_grid->get_number_of_points_Z());
         //We get a random direction for the photon
         this ->get_random_direction(this -> m_photons[i],generator,uniform_zero_one_distribution);
     }
 }
 
+std::map<std::string,double> monte_carlo::read_main_file(void){
+    //First we create a map with the default values
+    std::map<std::string,double> simulation_parameters;
+    //###PHOTONS###
+    //Number of m_photons packages to be used in the Monte Carlo simulation
+    simulation_parameters["nphot"] = 100000.0;
+    //Number of m_photons packages to be used for the scattering Monte Carlo simulation
+    simulation_parameters["nphot_scat"] = 10000.0;
+    //Number of photon packages for the scattering Monte Carlo simulations, done during spectrum-calculation
+    simulation_parameters["nphot_spec"] = 10000.0;
+    //The number of photon packages for the Monte Carlo simulations for the mcmono
+    simulation_parameters["nphot_mono"] = 100000.0;
+    //Indicates if all photon packages will have the same energy
+    simulation_parameters["mc_weighted_photons"] = 1.0;
+    //Indicates if MC calculate the photon motion inside cells more efficiently
+    simulation_parameters["optimized_motion"] = 0.0;
+    //A starting value of the random seed for the Monte Carlo simulation
+    //###MONTE CARLO SIMULATION###
+    //TODO : Creo que esto debería iniciar desde un modulo random o algo asi
+    //TODO : Igual no lo usamos :3
+    simulation_parameters["iseed"] = -17933201.0;
+    //Can make a faster MC simulation at cost of being less accurate
+    simulation_parameters["ifast"] = 0.0;
+    //This is the fraction by which the energy in each cell may increase before the temperature is recalculated in the Monte Carlo simulation
+    simulation_parameters["enthres"] = 0.01;
+    //If 0, then all stars are treated as point-sources. If 1, then all stars are treated as finite-size spheres
+    simulation_parameters["istar_sphere"] = 0.0;
+    //The temperatures are determined in the Monte Carlo method using tabulated pre-computed integrals
+    simulation_parameters["ntemp"] = 1000.0;
+    //The lowest pre-calculated temperature
+    simulation_parameters["temp0"] = 0.01;
+    //The highest pre-calculated temperature.
+    simulation_parameters["temp1"] = 1.0e5;
+    //###DUST###
+    //Indicates if dust files must be included
+    simulation_parameters["incl_dust"] = 1.0;
+    //If set to 0, then the temperatures of all coexisting dust species are always forced to be the same. If 1, then each dust species is thermally independent of the other.
+    simulation_parameters["itempdecoup"] = 1.0;
+    //###LINES###
+    //Indicates if line files must be included
+    simulation_parameters["incl_lines"] = 0.0;
+    //TODO : Esta parte tiene que ver con los archivos de lineas que aun no usamos
+    simulation_parameters["lines_mode"] = 1.0;
+    simulation_parameters["lines_maxdoppler"] = 0.3;
+    simulation_parameters["lines_partition_ntempint"] = 1000.0;
+    simulation_parameters["lines_partition_temp0"] = 0.1;
+    simulation_parameters["lines_partition_temp1"] = 1.0e5;
+    simulation_parameters["lines_show_pictograms"] = 0.0;
+    //###CAMERA####
+    //TODO : Esta parte tiene que ver con las imagenes lo que queda para mas adelante
+    simulation_parameters["camera_tracemode"] = 1.0;
+    simulation_parameters["camera_nrrefine"] = 100.0;
+    simulation_parameters["camera_refine_criterion"] = 1.0;
+    simulation_parameters["camera_incl_stars"] = 1.0;
+    simulation_parameters["camera_starsphere_nrpix"] = 20.0;
+    simulation_parameters["camera_spher_cavity_relres"] = 0.05;
+    simulation_parameters["camera_localobs_projection"] = 1.0;
+    simulation_parameters["camera_min_dangle"] = 0.05;
+    simulation_parameters["camera_max_dangle"] = 0.3;
+    simulation_parameters["camera_min_dr"] = 0.003;
+    simulation_parameters["camera_diagnostics_subpix"] = 0.0;
+    simulation_parameters["camera_secondorder"] = 0.0;
+    simulation_parameters["camera_interpol_jnu"] = 0.0;
+    //TODO : CATEGORIZAR SEGUN CORRESPONDA
+    //Determines whether the output of space-dependent data will be in ASCII form (rto_style=1) or binary form (rto_style=3)
+    simulation_parameters["rto_style"] = 1.0;
+    //TODO : Verificar y entender uso de este parametro
+    simulation_parameters["tgas_eq_tdust"] = 0.0;
+    //TODO : Entender este parametro, tiene que ver con el scattering pero hay que revisar
+    simulation_parameters["scattering_mode_max"] = 1.0;
+    //Variable to store each line from the file
+    std::string line;
+    //We read the main input file
+    std::ifstream input_file;
+    //TODO : Pedirle al usuario una carpeta y abrir todo desde ahi. Dejar en blanco para carpeta inputs
+    input_file.open("inputs/radmc3d.inp");
+    std::vector<std::string> values;
+    //In case that the file couldn't be opened, an error message is displayed.
+    if(!input_file){
+        std::cerr << "Mandatory file \"radmc3d.inp\" could not be opened. Make sure that the file exists" << std::endl;
+        exit(0);
+    }
+    //For each line we obtain the information and we store it in the map
+    while (std::getline(input_file, line)) {
+        values = common::tokenize(line);
+        simulation_parameters[values[0]] = std::stof(values[2]);
+    }
+    return simulation_parameters;
+}
 
+/*
+void monte_carlo::monte_carlo_move_photon_spherical(void){
+    
+}
+ */
+
+/*
 std::map<std::string,double> monte_carlo::read_main_file(void){
     //First we create a map with the default values
     std::map<std::string,double> simulation_parameters;
@@ -566,6 +667,7 @@ std::map<std::string,double> monte_carlo::read_main_file(void){
     }
     return simulation_parameters;
 }
+*/
 
 monte_carlo::~monte_carlo(void) {
     ;

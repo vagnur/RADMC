@@ -85,6 +85,7 @@ public:
     //Empty destructor
 	~stars(void);
 
+    void fix_spherical_position();
 
 };
 

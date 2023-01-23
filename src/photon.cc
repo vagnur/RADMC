@@ -5,7 +5,8 @@ photon::photon(void){
 }
 
 photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
-               int number_of_species, int number_of_frequencies, int star_source, int frequency_index, const std::vector<double>& star_ray_position) {
+               int number_of_species, int number_of_frequencies, int star_source, int frequency_index, const std::vector<double>& star_ray_position,
+               int number_of_points_x, int number_of_points_y, int number_of_points_z) {
     //At first, we resize each vector in order to store relevant information for the photon
     this->orientation.resize(3);
     this->direction.resize(3);
@@ -31,57 +32,15 @@ photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& unifor
     this -> frequency_index = frequency_index;
     //We get a tau path for the photon
     this->calculate_tau_path(generator, uniform_zero_one_distribution);
-    //At first, the photon is on the grid
-    this->on_grid = true;
+    //We calculate if the photon is inside or outside the grid
+    //this ->is_on_grid(number_of_points_x, number_of_points_y, number_of_points_z);
+    //std::cout << this -> on_grid << std::endl;
 }
 
 void photon::calculate_tau_path(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution) {
     double rn = uniform_zero_one_distribution(generator);
     this->tau_path_total = -1.0 * std::log(1.0 - rn);
     this->tau_path_gone = 0.0;
-}
-
-double
-photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
-                              const std::vector<double> &grid_cell_walls_y,
-                              const std::vector<double> &grid_cell_walls_z) {
-
-    std::vector<int> signs = {-1, 1};
-    this->obtain_cell_walls(grid_cell_walls_x, grid_cell_walls_y, grid_cell_walls_z);
-    this->distance[0] = (this->cell_walls[0] - this->ray_position[0]) / this->direction[0];
-    this->distance[1] = (this->cell_walls[1] - this->ray_position[1]) / this->direction[1];
-    this->distance[2] = (this->cell_walls[2] - this->ray_position[2]) / this->direction[2];
-    double min_distance = std::min(std::min(distance[0], distance[1]), distance[2]);
-    int count = 0;
-    std::vector<int> indexes = {-1, -1, -1};
-    for (int i = 0; i < 3; ++i) {
-        if (this->distance[i] == min_distance) {
-            indexes[count] = i;
-            count++;
-        }
-    }
-
-    this->ray_position[0] = this->ray_position[0] + min_distance * this->direction[0];
-    this->ray_position[1] = this->ray_position[1] + min_distance * this->direction[1];
-    this->ray_position[2] = this->ray_position[2] + min_distance * this->direction[2];
-
-    //avoid bug assign cellWall to ray position
-    //update grid position with signs
-    for (int i = 0; i < count; i++) {
-        this->ray_position[indexes[i]] = this->cell_walls[indexes[i]];
-        //TODO : Revisar signo +
-        this->grid_position[indexes[i]] = this->grid_position[indexes[i]] + signs[this->orientation[indexes[i]]];
-    }
-
-    this->is_on_grid(number_of_points_X, number_of_points_Y, number_of_points_Z);
-    return min_distance;
-}
-
-void photon::obtain_cell_walls(const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
-                               const std::vector<double> &grid_cell_walls_z) {
-    this->cell_walls[0] = grid_cell_walls_x[this->grid_position[0] + this->orientation[0]];
-    this->cell_walls[1] = grid_cell_walls_y[this->grid_position[1] + this->orientation[1]];
-    this->cell_walls[2] = grid_cell_walls_z[this->grid_position[2] + this->orientation[2]];
 }
 
 void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int number_of_points_z) {
@@ -91,8 +50,7 @@ void photon::is_on_grid(int number_of_points_x, int number_of_points_y, int numb
     this->on_grid = on_x && on_y && on_z;
 }
 
-void photon::calculate_opacity_coefficients(double minor_distance, int number_of_species,
-                                            const std::vector<dust_species>& dust_species_information) {
+void photon::calculate_opacity_coefficients(int number_of_species, const std::vector<dust_species>& dust_species_information) {
     //We obtain the previous position of the photon before the movement
     int ix = this->prev_grid_position[0];
     int iy = this->prev_grid_position[1];
@@ -120,7 +78,7 @@ void photon::calculate_opacity_coefficients(double minor_distance, int number_of
     this->alpha_total = opacity_coefficient_alpha_A_total + opacity_coefficient_alpha_S_total;
     //The albedo is the radiation percentage that the specie reflex respect the radiation that affects it
     this->albedo = opacity_coefficient_alpha_S_total / this->alpha_total;
-    this->dtau = this->alpha_total * minor_distance;
+    this->dtau = this->alpha_total * this -> min_distance;
 
 }
 
@@ -225,6 +183,10 @@ const std::vector<double>& photon::get_direction() const{
     return this -> direction;
 }
 
+const std::vector<int>& photon::get_orientation() const{
+    return this -> orientation;
+}
+
 void photon::set_orientation(const std::vector<int>& orientation){
     this -> orientation[0] = orientation[0];
     this -> orientation[1] = orientation[1];
@@ -279,7 +241,72 @@ photon::~photon(void) {
     ;
 }
 
+void photon::set_walls(const std::vector<double> &cell_walls) {
+    this -> cell_walls = cell_walls;
+}
+
+const std::vector<double> &photon::get_cell_walls() const {
+    return this -> cell_walls;
+}
+
+void photon::set_distance(const std::vector<double> distance) {
+    this -> distance = distance;
+}
+
+void photon::set_min_distance(double min_distance) {
+    this -> min_distance = min_distance;
+}
+
+
+
 //////////////////DEPRECIATED CODE////////////////////
+
+/*
+double
+photon::advance_next_position(int number_of_points_X,int number_of_points_Y,int number_of_points_Z, const std::vector<double> &grid_cell_walls_x,
+                              const std::vector<double> &grid_cell_walls_y,
+                              const std::vector<double> &grid_cell_walls_z) {
+
+    std::vector<int> signs = {-1, 1};
+    this->obtain_cell_walls(grid_cell_walls_x, grid_cell_walls_y, grid_cell_walls_z);
+    this->distance[0] = (this->cell_walls[0] - this->ray_position[0]) / this->direction[0];
+    this->distance[1] = (this->cell_walls[1] - this->ray_position[1]) / this->direction[1];
+    this->distance[2] = (this->cell_walls[2] - this->ray_position[2]) / this->direction[2];
+    double min_distance = std::min(std::min(distance[0], distance[1]), distance[2]);
+    int count = 0;
+    std::vector<int> indexes = {-1, -1, -1};
+    for (int i = 0; i < 3; ++i) {
+        if (this->distance[i] == min_distance) {
+            indexes[count] = i;
+            count++;
+        }
+    }
+
+    this->ray_position[0] = this->ray_position[0] + min_distance * this->direction[0];
+    this->ray_position[1] = this->ray_position[1] + min_distance * this->direction[1];
+    this->ray_position[2] = this->ray_position[2] + min_distance * this->direction[2];
+
+    //avoid bug assign cellWall to ray position
+    //update grid position with signs
+    for (int i = 0; i < count; i++) {
+        this->ray_position[indexes[i]] = this->cell_walls[indexes[i]];
+        //TODO : Revisar signo +
+        this->grid_position[indexes[i]] = this->grid_position[indexes[i]] + signs[this->orientation[indexes[i]]];
+    }
+
+    this->is_on_grid(number_of_points_X, number_of_points_Y, number_of_points_Z);
+    return min_distance;
+}
+ */
+
+/*
+void photon::obtain_cell_walls(const std::vector<double> &grid_cell_walls_x, const std::vector<double> &grid_cell_walls_y,
+                               const std::vector<double> &grid_cell_walls_z) {
+    this->cell_walls[0] = grid_cell_walls_x[this->grid_position[0] + this->orientation[0]];
+    this->cell_walls[1] = grid_cell_walls_y[this->grid_position[1] + this->orientation[1]];
+    this->cell_walls[2] = grid_cell_walls_z[this->grid_position[2] + this->orientation[2]];
+}
+*/
 
 /*
 photon::photon(std::mt19937& generator, std::uniform_real_distribution<>& uniform_zero_one_distribution,
@@ -470,13 +497,13 @@ void photon::do_absorption_event(std::mt19937& generator, std::uniform_real_dist
         this -> dust_specie_temperature[i] = dust_species_information[i].get_temperature()[iz][iy][ix];
         //this->dust_specie_temperature[i] = temperatures[i][iz][iy][ix];
     }
-    this->pickRandomFreqDb(generator, uniform_real_distribution,number_of_frequencies, number_of_species, number_of_temperatures, dbTemp, dbCumulNorm);
+    this->generate_random_frequency(generator, uniform_real_distribution,number_of_frequencies, number_of_species, number_of_temperatures, dbTemp, dbCumulNorm);
 
 }
  */
 
 /*
-void photon::pickRandomFreqDb(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
+void photon::generate_random_frequency(std::mt19937& generator, std::uniform_real_distribution<>& uniform_real_distribution,
                               int number_of_frequencies, int number_of_species, int number_of_temperatures,
                               const std::vector<double> &dbTemp,
                               const std::vector<std::vector<std::vector<double>>> &dbCumulNorm) {
