@@ -18,8 +18,10 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     // ************ SETUP OF THE SIMULATION ENVIRONMENT **********************
 
     //We read the regular cartesian grid from the "amr_grid.inp" file
-    this->m_grid = new cartesian_regular_grid();
-    //this -> m_grid = new spherical_regular_grid();
+    //TODO : Aca se cambia el tipo de grilla utilizada. Se puede decidir a partir del archivo de entrada de la grilla o
+    //TODO : a se podría pedir como parámetro de entrada
+    //this->m_grid = new cartesian_regular_grid();
+    this -> m_grid = new spherical_regular_grid();
     this -> m_grid -> initialize_grid();
 
     //We read the frequencies from the "wavelength_mmakicron.inp" file, and we calculate
@@ -41,7 +43,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
     this->m_stars.jitter_stars(this->m_grid->get_x_points(), this->m_grid->get_y_points(),
                                this->m_grid->get_z_points());
     if(this -> m_grid->get_grid_type() == "spherical"){
-       this -> m_stars.fix_spherical_position();
+       this -> m_stars.fix_spherical_position(this->m_grid->get_y_points(),this->m_grid->get_number_of_points_Y());
     }
     //We read the dust information.
     //First, we read the "dust_density.inp" file, to obtain the density of the species in the grid
@@ -140,9 +142,8 @@ void monte_carlo::launch_photons(std::mt19937& generator, std::uniform_real_dist
         }
         this->move_photon(this->m_photons[i], generator, uniform_zero_one_distribution);
         while(this -> m_photons[i].get_on_grid_condition()){
-            //TODO : nombre de la función
-            //TODO : logica de la función, generar eventos (definir en el foton)
-            if(this -> m_photons[i].get_is_scattering_condition()) {
+            if(this -> m_photons[i].get_next_event() == "scattering"){
+            //if(this->m_photons[i].get_next_event()) {
                 if(scattering_mode == 1){
                     //this->m_photons[i].get_random_direction(generator, uniform_zero_one_distribution);
                     this -> get_random_direction(m_photons[i],generator,uniform_zero_one_distribution);
@@ -153,7 +154,7 @@ void monte_carlo::launch_photons(std::mt19937& generator, std::uniform_real_dist
                     this -> get_henvey_greenstein_direction(this -> m_photons[i], generator, uniform_zero_one_distribution,this -> m_dust.get_dust_species()[scattering_specie].get_g_interpoled());
                 }
             }
-            else{
+            if(this -> m_photons[i].get_next_event() == "absorption"){
                 this -> do_absorption_event(generator, uniform_zero_one_distribution, this -> m_photons[i], number_of_temperatures);
                 //this -> m_photons[i].get_random_direction(generator, uniform_zero_one_distribution);
                 this -> get_random_direction(m_photons[i],generator,uniform_zero_one_distribution);
@@ -479,6 +480,9 @@ void monte_carlo::initialize_cartesian_regular_photons(std::mt19937& generator, 
                                       m_grid->get_number_of_points_Z());
         //We get a random direction for the photon
         this ->get_random_direction(this -> m_photons[i],generator,uniform_zero_one_distribution);
+        //TODO : Borrar estas lineas
+        std::vector<double> direction = {-0.15734385689173966,-1.3453880951885377e-2,0.98745222860944748};
+        this -> m_photons[i].set_direction(direction);
     }
 }
 
@@ -760,7 +764,7 @@ void monte_carlo::do_monte_carlo_therm_regular_cartesian_grid() {
         while(this -> m_photons[i].get_on_grid_condition()){
             std::cout << "The photon " << i + 1 << " is on the grid" << std::endl;
             //We need to do a scattering event...
-            if(this -> m_photons[i].get_is_scattering_condition()){
+            if(this -> m_photons[i].get_next_event()){
                 std::cout << "The photon " << i + 1 << " is going to scatter" << std::endl;
                 //If we do a scattering event, we need to know the type of scattering
                 if(scattering_mode == 1){

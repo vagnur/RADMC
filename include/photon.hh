@@ -130,12 +130,12 @@ public:
     int get_star_source(void) const;
     int get_frequency_index() const;
     bool get_on_grid_condition() const;
-    bool get_is_scattering_condition() const;
     double get_dtau() const;
     double get_tau_path_total() const;
     double get_tau_path_gone() const;
     double get_albedo() const;
     double get_alpha_A_total() const;
+    std::string get_next_event() const;
     const std::vector<double> &get_ray_position() const;
     const std::vector<double> &get_alpha_A_specie() const;
     const std::vector<int> &get_grid_position() const;

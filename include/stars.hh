@@ -85,7 +85,7 @@ public:
     //Empty destructor
 	~stars(void);
 
-    void fix_spherical_position();
+    void fix_spherical_position(std::vector<double> theta_points, int number_of_theta_points);
 
 };
 

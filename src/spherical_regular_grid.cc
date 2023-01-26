@@ -13,17 +13,17 @@ void spherical_regular_grid::initialize_grid(){
     this -> calculate_cell_volume();
     this -> amrray_sint1 = sin(this -> y_points[0]);
     this -> amrray_cost1 = cos(this -> y_points[0]);
-    this -> amrray_sint2 = sin(this -> y_points[this -> number_of_points_y]);
-    this -> amrray_cost2 = cos(this -> y_points[this -> number_of_points_y]);
+    this -> amrray_sint2 = sin(this -> y_points[this -> number_of_points_y-1]);
+    this -> amrray_cost2 = cos(this -> y_points[this -> number_of_points_y-1]);
     this -> amrray_sinp1 = sin(this -> z_points[0]);
     this -> amrray_cosp1 = cos(this -> z_points[0]);
-    this -> amrray_sinp2 = sin(this -> z_points[this -> number_of_points_z]);
-    this -> amrray_cosp2 = cos(this -> z_points[this -> number_of_points_z]);
+    this -> amrray_sinp2 = sin(this -> z_points[this -> number_of_points_z-1]);
+    this -> amrray_cosp2 = cos(this -> z_points[this -> number_of_points_z-1]);
     this -> amr_cyclic_xyz.resize(3);
     amr_cyclic_xyz[0] = false;
     amr_cyclic_xyz[1] = false;
     amr_cyclic_xyz[2] = false;
-    if(this -> z_points[0] == 0.0 && this -> z_points[this->number_of_points_z] == common::get_pi()){
+    if(this -> z_points[0] == 0.0 && this -> z_points[this->number_of_points_z-1] == common::get_two_pi()){
         this -> amr_cyclic_xyz[2] = true;
     }
 }
@@ -84,19 +84,19 @@ void spherical_regular_grid::calculate_cell_volume(){
 
 std::vector<int> spherical_regular_grid::found_ray_position_in_grid(const std::vector<double>& ray_position){
     std::vector<int> grid_points(3);
-    if(ray_position[0] >= this -> x_points[0] || ray_position[0] <= this -> x_points[this->number_of_points_x]) {
+    if(ray_position[0] >= this -> x_points[0] && ray_position[0] <= this -> x_points[this->number_of_points_x-1]) {
         grid_points[0] = std::floor(ray_position[0] / (this->diference_x + this->x_points[0]));
     }
     else{
         grid_points[0] = -1;
     }
-    if(ray_position[1] >= this -> y_points[0] || ray_position[1] <= this -> y_points[this->number_of_points_y]) {
+    if(ray_position[1] >= this -> y_points[0] && ray_position[1] <= this -> y_points[this->number_of_points_y-1]) {
         grid_points[1] = std::floor(ray_position[1] / (this->diference_y + this->y_points[0]));
     }
     else{
         grid_points[1] = -1;
     }
-    if(ray_position[2] >= this -> z_points[0] || ray_position[2] <= this -> z_points[this->number_of_points_z]) {
+    if(ray_position[2] >= this -> z_points[0] && ray_position[2] <= this -> z_points[this->number_of_points_z-1]) {
         grid_points[2] = std::floor(ray_position[2] / (this->diference_z + this->z_points[0]));
     }
     else{
@@ -146,6 +146,10 @@ void spherical_regular_grid::calculate_photon_new_position(photon &photon_i){
     }
 }
 
+void spherical_regular_grid::move_photon_inside(photon &photon_i) {
+    ;
+}
+/*
 void spherical_regular_grid::move_photon_inside(photon &photon_i){
     int amrray_icross;
     double x0dotdir,ray_dsend,cross_ds, det,r02,r0,theta0,phi0,ds_try,sgnz,cossindum,ct2,st2;
@@ -501,6 +505,7 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
     }
     
 }
+ */
 
 //TODO : Considero esta función inecesaria, el fotón comienza con una dirección aleatoria.
 //TODO : Se podría simplemente iniciar en un valor aleatorio de theta y phi , siempre va a entrar por la izquierda al
@@ -566,10 +571,10 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
         val_p2 = false;
     }
     // Same is true for radially outward moving rays
-    dum = pow(ray_position[0] - spherical_coordinates[0] * direction[0],2) +
-          pow(ray_position[1] - spherical_coordinates[0] * direction[1],2) +
-          pow(ray_position[2] - spherical_coordinates[0] * direction[2],2);
-    if(dum < pow(tiny * spherical_coordinates[0],2)){
+    dum = pow(ray_position[0] - r0 * direction[0],2) +
+          pow(ray_position[1] - r0 * direction[1],2) +
+          pow(ray_position[2] - r0 * direction[2],2);
+    if(dum < pow(tiny * r0,2)){
         val_t1 = false;
         val_t2 = false;
         val_p1 = false;
@@ -579,6 +584,7 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
     // If cyclic boundary conditions in phi are chosen, or if phi is not
     // considered, then we do not need to find crossings with the phi
     // grid boundaries
+    
     if(this -> amr_cyclic_xyz[2]){
         val_p1 = false;
         val_p2 = false;
@@ -610,6 +616,7 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
     // equations becomes necessary.
 
     this -> cross_inner_radius(x_r1,y_r1,z_r1,val_r1,ds_r1,x00dotdir,r002,s00,ray_position,direction,r_r1,theta_r1,phi_r1);
+    std::cout << val_r1 << std::endl;
 
     // Now solve the equation for the crossing with outer R=const surface
     // and check if the crossing happens within the theta, phi grid
@@ -620,32 +627,30 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
     // it is not expected to be necessary
 
     this -> cross_outer_radius(x_r2,y_r2,z_r2,val_r2,ds_r2,x00dotdir,r002,r02,s00,ray_position,direction,r_r2,theta_r2,phi_r2);
-
     // Now let us try to find the crossings with the theta1=const cone.
 
     if(val_t1){
         this -> cross_inner_theta_cone(x_t1,y_t1,z_t1,val_t1,ds_t1,ray_position,direction,x00,y00,z00,s00,r_t1,theta_t1,phi_t1);
     }
-
     // Now let us try to find the crossings with the theta2=const cone.
     if(val_t2){
         this ->cross_outer_theta_cone(x_t2,y_t2,z_t2,val_t2,ds_t2,s00,x00,y00,z00,ray_position,direction,r_t2,theta_t2,phi_t2);
     }
-
     // Now let us try to find the crossings with the phi1=const cone.
     if(val_p1){
         this ->cross_inner_phi_cone(x_p1,y_p1,z_p1,val_p1,ds_p1,ray_position,direction,r_p1,theta_p1,phi_p1);
     }
-
     // Now let us try to find the crossings with the phi2=const cone.
     if(val_p2){
         this ->cross_outer_phi_cone(x_p2,y_p2,z_p2,val_p2,ds_p2,ray_position,direction,r_p2,theta_p2,phi_p2);
     }
-
     // Now determine which, if any, of the crossings is the first one
     // that will be encountered.
 
+
     //Determine if/where the ray would cross the grid
+
+    //TODO : Desde Aqui
 
     amrray_icross = 0;
     cross_ds = 1e99;
@@ -740,11 +745,9 @@ void spherical_regular_grid::cross_inner_radius(double &x_r1, double &y_r1, doub
         x_r1 = ray_position[0] + ds_r1 * direction[0];
         y_r1 = ray_position[1] + ds_r1 * direction[1];
         z_r1 = ray_position[2] + ds_r1 * direction[2];
-
         r_r1 = this -> x_points[0];
         theta_r1 = acos(z_r1/r_r1);
-
-        if(theta_r1 <= this -> y_points[0] - this -> tiny || theta_r1 >= this -> y_points[this->number_of_points_y] + tiny){
+        if(theta_r1 <= this -> y_points[0] - this -> tiny || theta_r1 >= this -> y_points[this->number_of_points_y-1] + tiny){
             val_r1 = false;
         }
 
@@ -755,7 +758,7 @@ void spherical_regular_grid::cross_inner_radius(double &x_r1, double &y_r1, doub
             if (phi_r1 < this->z_points[0] - this->tiny) {
                 val_r1 = false;
             }
-            if (phi_r1 > this->z_points[this->number_of_points_z] + this->tiny) {
+            if (phi_r1 > this->z_points[this->number_of_points_z-1] + this->tiny) {
                 val_r1 = false;
             }
         }
@@ -764,7 +767,7 @@ void spherical_regular_grid::cross_inner_radius(double &x_r1, double &y_r1, doub
 
 void spherical_regular_grid::cross_outer_radius(double &x_r2, double &y_r2, double &z_r2,bool &val_r2, double &ds_r2,double x00dotdir, double r002, double r02, double s00, const std::vector<double> &ray_position, const std::vector<double> &direction,double &r_r2,double &theta_r2,double &phi_r2){
     double r2,det;
-    r2 = this -> x_points[this -> number_of_points_x]*this -> x_points[this -> number_of_points_x];
+    r2 = this -> x_points[this -> number_of_points_x-1]*this -> x_points[this -> number_of_points_x-1];
     det = x00dotdir*x00dotdir + r2 - r002;
     ds_r2 = -1e99;
     if(det > 0.0){
@@ -780,7 +783,7 @@ void spherical_regular_grid::cross_outer_radius(double &x_r2, double &y_r2, doub
         y_r2 = ray_position[1] + ds_r2 * direction[1];
         z_r2 = ray_position[2] + ds_r2 * direction[2];
 
-        r_r2 = this->x_points[this->number_of_points_x];
+        r_r2 = this->x_points[this->number_of_points_x-1];
 
         theta_r2 = acos(z_r2 / r_r2);
 
@@ -790,7 +793,7 @@ void spherical_regular_grid::cross_outer_radius(double &x_r2, double &y_r2, doub
             if (phi_r2 < this->z_points[0] + this->tiny) {
                 val_r2 = false;
             }
-            if (phi_r2 > this->z_points[this->number_of_points_z] + this->tiny) {
+            if (phi_r2 > this->z_points[this->number_of_points_z-1] + this->tiny) {
                 val_r2 = false;
             }
         }
@@ -857,7 +860,7 @@ void spherical_regular_grid::cross_inner_theta_cone(double &x_t1, double &y_t1, 
 
         r_t1 = sqrt(x_t1*x_t1 + y_t1*y_t1 + z_t1*z_t1);
 
-        if(r_t1 < this -> x_points[0]*oneminus || r_t1 > this -> x_points[this -> number_of_points_x]*oneplus){
+        if(r_t1 < this -> x_points[0]*oneminus || r_t1 > this -> x_points[this -> number_of_points_x-1]*oneplus){
             val_t1 = false;
         }
 
@@ -867,7 +870,7 @@ void spherical_regular_grid::cross_inner_theta_cone(double &x_t1, double &y_t1, 
             if (phi_t1 < this->z_points[0] - tiny) {
                 val_t1 = false;
             }
-            if (phi_t1 > this->z_points[this->number_of_points_z] + tiny) {
+            if (phi_t1 > this->z_points[this->number_of_points_z-1] + tiny) {
                 val_t1 = false;
             }
         }
@@ -889,7 +892,7 @@ void spherical_regular_grid::cross_outer_theta_cone(double &x_t2, double &y_t2, 
     else{
         sdet = sqrt(det);
         pabc = 4*pa*pc/(pb*pb);
-        if(this -> y_points[this -> number_of_points_y] > common::get_pi_half() && ray_position[0]*direction[0] + ray_position[1]*direction[1] <= 0.0){
+        if(this -> y_points[this -> number_of_points_y-1] > common::get_pi_half() && ray_position[0]*direction[0] + ray_position[1]*direction[1] <= 0.0){
             if(fabs(pabc) > 1e-4 || pb < 0.0){
                 ds_t2 = -0.5 * (pb - sdet) / pa + s00;
             }
@@ -921,11 +924,11 @@ void spherical_regular_grid::cross_outer_theta_cone(double &x_t2, double &y_t2, 
         y_t2 = ray_position[1] + ds_t2 * direction[1];
         z_t2 = ray_position[2] + ds_t2 * direction[2];
 
-        theta_t2 = this -> y_points[this -> number_of_points_y];
+        theta_t2 = this -> y_points[this -> number_of_points_y-1];
 
         r_t2 = sqrt(x_t2*x_t2 + y_t2*y_t2 + z_t2*z_t2);
 
-        if(r_t2 < this -> x_points[0]*oneminus || r_t2 > this -> x_points[this->number_of_points_x]*oneplus){
+        if(r_t2 < this -> x_points[0]*oneminus || r_t2 > this -> x_points[this->number_of_points_x-1]*oneplus){
             val_t2 = false;
         }
         phi_t2 = common::convert_cartesian_to_spherical_coordinates(x_t2,y_t2,z_t2)[2];
@@ -934,7 +937,7 @@ void spherical_regular_grid::cross_outer_theta_cone(double &x_t2, double &y_t2, 
             if (phi_t2 < this->z_points[0] - tiny) {
                 val_t2 = false;
             }
-            if (phi_t2 > this->z_points[this->number_of_points_z] + tiny) {
+            if (phi_t2 > this->z_points[this->number_of_points_z-1] + tiny) {
                 val_t2 = false;
             }
         }
@@ -985,7 +988,7 @@ void spherical_regular_grid::cross_inner_phi_cone(double &x_p1, double &y_p1, do
     double oneminus = 0.99999999999999;
     double oneplus = 1.00000000000001;
 
-    if((theta_p1 <= this -> y_points[0] - this -> tiny) || (theta_p1 >= this -> y_points[this -> number_of_points_y] + this -> tiny)){
+    if((theta_p1 <= this -> y_points[0] - this -> tiny) || (theta_p1 >= this -> y_points[this -> number_of_points_y-1] + this -> tiny)){
         val_p1 = false;
     }
 }
@@ -1034,7 +1037,7 @@ void spherical_regular_grid::cross_outer_phi_cone(double &x_p2, double &y_p2, do
     double oneminus = 0.99999999999999;
     double oneplus = 1.00000000000001;
 
-    if((theta_p2 <= this -> y_points[0] - this -> tiny) || (theta_p2 >= this -> y_points[this -> number_of_points_y] + this -> tiny)){
+    if((theta_p2 <= this -> y_points[0] - this -> tiny) || (theta_p2 >= this -> y_points[this -> number_of_points_y-1] + this -> tiny)){
         val_p2 = false;
     }
 }
@@ -1061,8 +1064,8 @@ void spherical_regular_grid::entering_from_radius(double dummy, int ixi, std::ve
     ray_position[2] = dummy * ray_position[2];
 
     //TODO : Usar método propio para encontrar indice
-    iy = common::hunt(this->y_points, this->number_of_points_y, theta_r, this->number_of_points_y);
-    iz = common::hunt(this->z_points, this->number_of_points_z, phi_r, this->number_of_points_z);
+    iy = common::hunt(this->y_points, this->number_of_points_y-1, theta_r, this->number_of_points_y-1);
+    iz = common::hunt(this->z_points, this->number_of_points_z-1, phi_r, this->number_of_points_z-1);
     ix = ixi;
     if (iy > this->number_of_points_y - 1) {
         iy = number_of_points_y - 1;
@@ -1094,8 +1097,8 @@ void spherical_regular_grid::entering_from_theta(int iyi, std::vector<double> &r
     ray_position[1] = y_t;
     ray_position[2] = z_t;
 
-    ix = common::hunt(this -> x_points,this -> number_of_points_x, r_t, this -> number_of_points_x);
-    iz = common::hunt(this -> z_points,this -> number_of_points_z, phi_t, this -> number_of_points_z);
+    ix = common::hunt(this -> x_points,this -> number_of_points_x-1, r_t, this -> number_of_points_x-1);
+    iz = common::hunt(this -> z_points,this -> number_of_points_z-1, phi_t, this -> number_of_points_z-1);
     iy = iyi;
     if(ix < 0){
         ix = 0;
@@ -1127,8 +1130,8 @@ void spherical_regular_grid::entering_from_phi(int izi, std::vector<double> &ray
     ray_position[1] = y_p;
     ray_position[2] = z_p;
 
-    ix = common::hunt(this -> x_points, this -> number_of_points_x,r_p,this -> number_of_points_x);
-    iy = common::hunt(this -> y_points, this -> number_of_points_y,theta_p,this -> number_of_points_y);
+    ix = common::hunt(this -> x_points, this -> number_of_points_x-1,r_p,this -> number_of_points_x-1);
+    iy = common::hunt(this -> y_points, this -> number_of_points_y-1,theta_p,this -> number_of_points_y-1);
     iz = izi;
     if(ix < 0){
         ix = 0;

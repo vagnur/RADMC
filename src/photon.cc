@@ -123,8 +123,13 @@ bool photon::get_on_grid_condition() const {
     return this->on_grid;
 }
 
-bool photon::get_is_scattering_condition() const {
-    return this->is_scattering;
+std::string photon::get_next_event() const {
+    if(this -> is_scattering){
+        return "scattering";
+    }
+    else{
+        return "absorption";
+    }
 }
 
 const std::vector<double> &photon::get_ray_position() const {

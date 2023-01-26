@@ -257,7 +257,7 @@ int stars::identify_star(std::mt19937& generator, std::uniform_real_distribution
     return star;
 }
 
-void stars::fix_spherical_position(){
+void stars::fix_spherical_position(std::vector<double> theta_points, int number_of_theta_points){
     std::vector<double> new_position(3);
     double r;
     for (int i = 0; i < this -> number_of_stars; ++i) {
@@ -268,6 +268,12 @@ void stars::fix_spherical_position(){
         }
         if(abs(this -> stars_information[i].get_star_position()[1]) < 1e-8*this -> stars_information[i].get_star_position()[0]) {
             new_position[1] = 1e-8 * this->stars_information[i].get_star_position()[0];
+        }
+        if(theta_points[number_of_theta_points - 1] == common::get_pi_half()){
+            //TODO : En teoria esto debería ser el valor absoluto, pero no está funcando con abs (da 0)
+            if(new_position[2] > 0.0){
+                new_position[2] = 0.0;
+            }
         }
         this -> stars_information[i].set_star_position(new_position);
     }
