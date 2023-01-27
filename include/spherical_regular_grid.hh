@@ -50,13 +50,13 @@ public:
     void move_photon_outside(photon &photon_i);
 
     void
-    entering_from_radius(double dummy, int ixi, std::vector<double> &ray_position, double x_r, double y_r, double z_r,
+    entering_from_radius(photon &photon_i, double dummy, int ixi, std::vector<double> &ray_position, double x_r, double y_r, double z_r,
                          double r_r, double theta_r, double phi_r);
 
-    void entering_from_theta(int iyi, std::vector<double> &ray_position, double x_t, double y_t, double z_t, double r_t,
+    void entering_from_theta(photon &photon_i, int iyi, std::vector<double> &ray_position, double x_t, double y_t, double z_t, double r_t,
                              double phi_t);
 
-    void entering_from_phi(int izi, std::vector<double> &ray_position, double x_p, double y_p, double z_p, double r_p,
+    void entering_from_phi(photon &photon_i, int izi, std::vector<double> &ray_position, double x_p, double y_p, double z_p, double r_p,
                            double theta_p);
 
     void

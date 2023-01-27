@@ -616,7 +616,6 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
     // equations becomes necessary.
 
     this -> cross_inner_radius(x_r1,y_r1,z_r1,val_r1,ds_r1,x00dotdir,r002,s00,ray_position,direction,r_r1,theta_r1,phi_r1);
-    std::cout << val_r1 << std::endl;
 
     // Now solve the equation for the crossing with outer R=const surface
     // and check if the crossing happens within the theta, phi grid
@@ -650,8 +649,6 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
 
     //Determine if/where the ray would cross the grid
 
-    //TODO : Desde Aqui
-
     amrray_icross = 0;
     cross_ds = 1e99;
     if(val_r1) {
@@ -674,7 +671,7 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
         amrray_icross = 5;
         cross_ds = ds_p1;
     }
-    if(val_p2 && (ds_p2 < cross_ds)){
+    if(val_p2 && (ds_p2 < cross_ds)) {
         amrray_icross = 6;
         cross_ds = ds_p2;
     }
@@ -700,30 +697,31 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
 
     if(amrray_icross == 1) {
         dummy = r_r1 / sqrt(ray_position[0] * ray_position[0] + ray_position[1] * ray_position[1] + ray_position[2] * ray_position[2]);
-        this ->entering_from_radius(dummy,0,ray_position,x_r1,y_r1,z_r1,r_r1,theta_r1,phi_r1);
+        this ->entering_from_radius(photon_i,dummy,0,ray_position,x_r1,y_r1,z_r1,r_r1,theta_r1,phi_r1);
         amrray_icross = -1;
     }
     else if(amrray_icross == 2){
         dummy = 1.0;
-        this ->entering_from_radius(dummy,this->number_of_points_x-1,ray_position,x_r2,y_r2,z_r2,r_r2,theta_r2,phi_r2);
+        this ->entering_from_radius(photon_i,dummy,this->number_of_points_x-1,ray_position,x_r2,y_r2,z_r2,r_r2,theta_r2,phi_r2);
         amrray_icross = -2;
     }
     else if(amrray_icross == 3){
-        this ->entering_from_theta(0,ray_position,x_t1,y_t1,z_t1,r_t1,phi_t1);
+        this ->entering_from_theta(photon_i,0,ray_position,x_t1,y_t1,z_t1,r_t1,phi_t1);
         amrray_icross = -3;
     }
     if(amrray_icross == 4){
-        this ->entering_from_theta(this->number_of_points_y-1,ray_position,x_t2,y_t2,z_t2,r_t2,phi_t2);
+        this ->entering_from_theta(photon_i,this->number_of_points_y-1,ray_position,x_t2,y_t2,z_t2,r_t2,phi_t2);
         amrray_icross = -4;
     }
     if(amrray_icross == 5){
-        this ->entering_from_phi(0,ray_position,x_p1,y_p1,z_p1,r_p1,theta_p1);
+        this ->entering_from_phi(photon_i,0,ray_position,x_p1,y_p1,z_p1,r_p1,theta_p1);
         amrray_icross = -5;
     }
     if(amrray_icross == 6){
-        this ->entering_from_phi(this -> number_of_points_z-1,ray_position,x_p2,y_p2,z_p2,r_p2,theta_p2);
+        this ->entering_from_phi(photon_i,this -> number_of_points_z-1,ray_position,x_p2,y_p2,z_p2,r_p2,theta_p2);
         amrray_icross = -6;
     }
+    photon_i.is_on_grid(this -> number_of_points_x, this -> number_of_points_y, this -> number_of_points_z);
     //TODO : Generalizar los métodos, probar y completar para la pos del fotón
     //TODO : Verificar camino de fotones que entran y de fotones que salen
 }
@@ -1042,7 +1040,7 @@ void spherical_regular_grid::cross_outer_phi_cone(double &x_p2, double &y_p2, do
     }
 }
 
-void spherical_regular_grid::entering_from_radius(double dummy, int ixi, std::vector<double> &ray_position, double x_r, double y_r, double z_r, double r_r, double theta_r, double phi_r){
+void spherical_regular_grid::entering_from_radius(photon &photon_i, double dummy, int ixi, std::vector<double> &ray_position, double x_r, double y_r, double z_r, double r_r, double theta_r, double phi_r){
     int ix,iy,iz;
     ray_position[0] = x_r;
     ray_position[1] = y_r;
@@ -1063,7 +1061,6 @@ void spherical_regular_grid::entering_from_radius(double dummy, int ixi, std::ve
     ray_position[1] = dummy * ray_position[1];
     ray_position[2] = dummy * ray_position[2];
 
-    //TODO : Usar método propio para encontrar indice
     iy = common::hunt(this->y_points, this->number_of_points_y-1, theta_r, this->number_of_points_y-1);
     iz = common::hunt(this->z_points, this->number_of_points_z-1, phi_r, this->number_of_points_z-1);
     ix = ixi;
@@ -1088,10 +1085,12 @@ void spherical_regular_grid::entering_from_radius(double dummy, int ixi, std::ve
             iz = 0;
         }
     }
+    std::vector<int> grid_position = {ix,iy,iz};
+    photon_i.set_grid_position(grid_position);
     //TODO : Encontrar celda y dejar en fotón
 }
 
-void spherical_regular_grid::entering_from_theta(int iyi, std::vector<double> &ray_position,double x_t,double y_t,double z_t,double r_t,double phi_t){
+void spherical_regular_grid::entering_from_theta(photon &photon_i, int iyi, std::vector<double> &ray_position,double x_t,double y_t,double z_t,double r_t,double phi_t){
     int ix,iy,iz;
     ray_position[0] = x_t;
     ray_position[1] = y_t;
@@ -1121,10 +1120,11 @@ void spherical_regular_grid::entering_from_theta(int iyi, std::vector<double> &r
             iz = 0;
         }
     }
-    //TODO : Encontrar celda y dejar en fotón
+    std::vector<int> grid_position = {ix,iy,iz};
+    photon_i.set_grid_position(grid_position);
 }
 
-void spherical_regular_grid::entering_from_phi(int izi, std::vector<double> &ray_position, double x_p, double y_p, double z_p, double r_p, double theta_p){
+void spherical_regular_grid::entering_from_phi(photon &photon_i, int izi, std::vector<double> &ray_position, double x_p, double y_p, double z_p, double r_p, double theta_p){
     int ix,iy,iz;
     ray_position[0] = x_p;
     ray_position[1] = y_p;
@@ -1145,5 +1145,6 @@ void spherical_regular_grid::entering_from_phi(int izi, std::vector<double> &ray
     if(iy > this -> number_of_points_y - 1){
         iy = this -> number_of_points_y - 1;
     }
-    //TODO : Encontrar celda y dejar en fotón
+    std::vector<int> grid_position = {ix,iy,iz};
+    photon_i.set_grid_position(grid_position);
 }
