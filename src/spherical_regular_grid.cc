@@ -26,6 +26,58 @@ void spherical_regular_grid::initialize_grid(){
     if(this -> z_points[0] == 0.0 && this -> z_points[this->number_of_points_z-1] == common::get_two_pi()){
         this -> amr_cyclic_xyz[2] = true;
     }
+    this->compute_trigometrics_for_edges();
+}
+
+void spherical_regular_grid::compute_trigometrics_for_edges(){
+    double theta1,theta2,phi1,phi2;
+    int nn;
+    //
+    nn = this -> number_of_points_y;
+    this-> amrray_finegrid_sintsq1.resize(nn);
+    this-> amrray_finegrid_sintsq2.resize(nn);
+    this-> amrray_finegrid_costsq1.resize(nn);
+    this-> amrray_finegrid_costsq2.resize(nn);
+    for (int i = 0; i < nn; ++i) {
+        if(this -> y_points[i] < common::get_pi_half()){
+            theta1 = this -> y_points[i];
+            theta2 = this -> y_points[i+1];
+        }
+        else{
+            theta1 = this -> y_points[i+1];
+            theta2 = this -> y_points[i];
+        }
+        this -> amrray_finegrid_sintsq1[i] = pow(sin(theta1),2);
+        this -> amrray_finegrid_sintsq2[i] = pow(sin(theta2),2);
+        this -> amrray_finegrid_costsq1[i] = 1.0 - amrray_finegrid_sintsq1[i];
+        this -> amrray_finegrid_costsq2[i] = 1.0 - amrray_finegrid_sintsq2[i];
+        if(theta2 == common::get_pi_half()){
+            this -> amrray_finegrid_sintsq2[i] = 1.0;
+            this -> amrray_finegrid_costsq2[i] = 0.0;
+        }
+        if(theta1 == 0.0){
+            this -> amrray_finegrid_sintsq1[i] = 0.0;
+            this -> amrray_finegrid_costsq1[i] = 1.0;
+        }
+        if(theta2 == common::get_pi()){
+            this -> amrray_finegrid_sintsq2[i] = 0.0;
+            this -> amrray_finegrid_costsq2[i] = -1.0;
+        }
+    }
+    //
+    nn = this -> number_of_points_z;
+    this-> amrray_finegrid_sinp1.resize(nn);
+    this-> amrray_finegrid_sinp2.resize(nn);
+    this-> amrray_finegrid_cosp1.resize(nn);
+    this-> amrray_finegrid_cosp2.resize(nn);
+    for (int i = 0; i < nn; ++i) {
+        phi1 = this -> z_points[i];
+        phi2 = this -> z_points[i+1];
+        this -> amrray_finegrid_sinp1[i] = sin(phi1);
+        this -> amrray_finegrid_sinp2[i] = sin(phi2);
+        this -> amrray_finegrid_cosp1[i] = sin(phi1);
+        this -> amrray_finegrid_cosp2[i] = sin(phi2);
+    }
 }
 
 void spherical_regular_grid::adjust_theta() {
@@ -131,7 +183,6 @@ void spherical_regular_grid::calculate_photon_cell_walls(photon &photon_i){
 void spherical_regular_grid::calculate_photon_new_position(photon &photon_i){
     //FOTON DENTRO
     //TODO : Acá cambia la lógica de cuándo el fotón está dentro.
-    //TODO : Tiene los muros de los radios ingresados, pero notar que los angulos simplemente dan vuelta.
     if(photon_i.get_on_grid_condition()){
         this -> move_photon_inside(photon_i);
     }
@@ -146,19 +197,23 @@ void spherical_regular_grid::calculate_photon_new_position(photon &photon_i){
     }
 }
 
-void spherical_regular_grid::move_photon_inside(photon &photon_i) {
-    ;
-}
-/*
+//void spherical_regular_grid::move_photon_inside(photon &photon_i) {
+//    ;
+//}
+
 void spherical_regular_grid::move_photon_inside(photon &photon_i){
     int amrray_icross;
-    double x0dotdir,ray_dsend,cross_ds, det,r02,r0,theta0,phi0,ds_try,sgnz,cossindum,ct2,st2;
+    int amrray_ix_next, amrray_iy_next, amrray_iz_next;
+    double x0dotdir,ray_dsend,cross_ds, det,r02,r0,theta0,phi0,ds_try,sgnz,cossindum,ct2,st2,ds;
+    double pa,pb,pc,eps,sdet,dum1,dum2;
     double eps_thres = 1e-4;
     double small = 1e-12;
     bool topquadrant,crossequator;
     std::vector<double> ray_position;
+    std::vector<int> ray_grid_position;
     std::vector<double> direction;
     std::vector<double> spherical_coordinates;
+    ray_grid_position = photon_i.get_grid_position();
     ray_position = photon_i.get_ray_position();
     direction = photon_i.get_direction();
     x0dotdir = ray_position[0] * direction[0] + ray_position[1] * direction[1] + ray_position[2] * direction[2];
@@ -199,7 +254,7 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
     // Try out crossing with outer radius.
     // Since we are within the cell the solution must be
     // the largest of the two.
-    det = x0dotdir*x0dotdir + this -> y_points[0]*this -> y_points[0] - r02;
+    det = x0dotdir*x0dotdir + this -> x_points[1]*this -> x_points[1] - r02;
     ds_try = -x0dotdir + sqrt(det);
     if(ds_try < 0.0) {
         ds_try = 0.0;
@@ -211,7 +266,7 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
 
     if(this -> present_dimensions[1]){
         // First check if we are in the top or bottom quadrant
-        if(this -> y_points[0] < common::get_pi_half()){
+        if(this -> y_points[this->number_of_points_y-2] < common::get_pi_half()){
             topquadrant = true;
             sgnz = 1.0;
             if(ray_position[2] < 0.0){
@@ -231,11 +286,11 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         }
 
         //TODO : Ver este vector y generar
-        cossindum = amrray_finegrid_costsq2(amrray_iy_curr,0); // ray_position[1]
+        cossindum = this -> amrray_finegrid_costsq2[ray_grid_position[1]]; // ray_position[1]
 
         if(cossindum == 0.0){
             // This is simple: just the crossing with the z=0-plane
-            if(ray_position[2] != 0.0){
+            if(direction[2] != 0.0){
                 ds_try = -ray_position[2] / direction[2];
                 if((ds_try > 0.0) && (ds_try < cross_ds)){
                     // Yes, we have a valid crossing
@@ -258,8 +313,8 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         // away from the midplane. Since we are definitely inside this cell
         // this means that we are currently outside this cone.
 
-        st2   = amrray_finegrid_sintsq1(amrray_iy_curr,0);
-        ct2   = amrray_finegrid_costsq1(amrray_iy_curr,0);
+        st2 = this -> amrray_finegrid_sintsq1[ray_grid_position[1]];
+        ct2 = this -> amrray_finegrid_costsq1[ray_grid_position[1]];
 
         // Be careful if st2=0.d0: this means that this theta=const wall of
         // the cell is in fact the z-axis, which is infinitely thin and
@@ -309,8 +364,8 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
             }
         }
         //
-        st2   = amrray_finegrid_sintsq2(amrray_iy_curr,0);
-        ct2   = amrray_finegrid_costsq2(amrray_iy_curr,0);
+        st2 = this -> amrray_finegrid_sintsq2[ray_grid_position[1]];
+        ct2 = this -> amrray_finegrid_costsq2[ray_grid_position[1]];
 
         if(ct2 != 0.0){
             pa = ct2 * (direction[0]*direction[0] + direction[1]*direction[1]) - st2*direction[2]*direction[2];
@@ -351,8 +406,8 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
     }
 
     if(present_dimensions[2]){
-        dum1 = ray_position[0] * amrray_finegrid_sinp1(amrray_iz_curr,0) - ray_position[1]*amrray_finegrid_cosp1(amrray_iz_curr,0);
-        dum2 = direction[1] * amrray_finegrid_cosp1(amrray_iz_curr,0) - direction[0] * amrray_finegrid_sinp1(amrray_iz_curr,0);
+        dum1 = ray_position[0] * this -> amrray_finegrid_sinp1[ray_grid_position[2]] - ray_position[1]*this -> amrray_finegrid_cosp1[ray_grid_position[2]];
+        dum2 = direction[1] * this -> amrray_finegrid_cosp1[ray_grid_position[2]] - direction[0] * this -> amrray_finegrid_sinp1[ray_grid_position[2]];
         if(dum2 < -small){
             ds_try = dum1 / dum2;
         }
@@ -363,8 +418,8 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
             amrray_icross = 5;
             cross_ds = ds_try;
         }
-        dum1 = ray_position[0] * amrray_finegrid_sinp2(amrray_iz_curr,0) - ray_position[1]*amrray_finegrid_cosp2(amrray_iz_curr,0);
-        dum2 = direction[1] * amrray_finegrid_cosp2(amrray_iz_curr,0) - direction[0] * amrray_finegrid_sinp2(amrray_iz_curr,0);
+        dum1 = ray_position[0] * this -> amrray_finegrid_sinp2[ray_grid_position[2]] - ray_position[1]*this -> amrray_finegrid_cosp2[ray_grid_position[2]];
+        dum2 = direction[1] * this -> amrray_finegrid_cosp2[ray_grid_position[2]] - direction[0] * this -> amrray_finegrid_sinp2[ray_grid_position[2]];
         if(dum2 > small){
             ds_try = dum1 / dum2;
         }
@@ -376,6 +431,7 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
             cross_ds = ds_try;
         }
     }
+
     ray_position[0] = ray_position[0] + cross_ds * direction[0];
     ray_position[1] = ray_position[1] + cross_ds * direction[1];
     ray_position[2] = ray_position[2] + cross_ds * direction[2];
@@ -407,19 +463,20 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
             }
         }
     }
+    int idir,ilr;
     switch (amrray_icross) {
         case(0):
-            amrray_ix_next = amrray_ix_curr;
-            amrray_iy_next = amrray_iy_curr;
-            amrray_iz_next = amrray_iz_curr;
+            amrray_ix_next = ray_grid_position[0];
+            amrray_iy_next = ray_grid_position[1];
+            amrray_iz_next = ray_grid_position[2];
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             break;
         case(1):
             idir = 1;
             ilr = 2;
-            amrray_ix_next = amrray_ix_curr - 1;
-            amrray_iy_next = amrray_iy_curr;
-            amrray_iz_next = amrray_iz_curr;
+            amrray_ix_next = ray_grid_position[0] - 1;
+            amrray_iy_next = ray_grid_position[1];
+            amrray_iz_next = ray_grid_position[2];
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_ix_next < 0){
                 amrray_ix_next = -1;
@@ -430,9 +487,9 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         case(2):
             idir = 1;
             ilr = 1;
-            amrray_ix_next = amrray_ix_curr + 1;
-            amrray_iy_next = amrray_iy_curr;
-            amrray_iz_next = amrray_iz_curr;
+            amrray_ix_next = ray_grid_position[0] + 1;
+            amrray_iy_next = ray_grid_position[1];
+            amrray_iz_next = ray_grid_position[2];
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_ix_next > this -> number_of_points_x - 1){
                 amrray_ix_next = -1;
@@ -443,9 +500,9 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         case(3):
             idir = 2;
             ilr = 2;
-            amrray_ix_next = amrray_ix_curr;
-            amrray_iy_next = amrray_iy_curr-1;
-            amrray_iz_next = amrray_iz_curr;
+            amrray_ix_next = ray_grid_position[0];
+            amrray_iy_next = ray_grid_position[1] - 1;
+            amrray_iz_next = ray_grid_position[2];
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_iy_next < 0){
                 amrray_ix_next = -1;
@@ -456,9 +513,9 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         case(4):
             idir = 2;
             ilr = 1;
-            amrray_ix_next = amrray_ix_curr;
-            amrray_iy_next = amrray_iy_curr+1;
-            amrray_iz_next = amrray_iz_curr;
+            amrray_ix_next = ray_grid_position[0];
+            amrray_iy_next = ray_grid_position[1] + 1;
+            amrray_iz_next = ray_grid_position[2];
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_iy_next > this -> number_of_points_y - 1) {
                 amrray_ix_next = -1;
@@ -469,9 +526,9 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         case(5):
             idir = 3;
             ilr = 2;
-            amrray_ix_next = amrray_ix_curr;
-            amrray_iy_next = amrray_iy_curr;
-            amrray_iz_next = amrray_iz_curr - 1;
+            amrray_ix_next = ray_grid_position[0];
+            amrray_iy_next = ray_grid_position[1];
+            amrray_iz_next = ray_grid_position[2] - 1;
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_iz_next < 0){
                 if(this->amr_cyclic_xyz[2]){
@@ -487,9 +544,9 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
         case(6):
             idir = 3;
             ilr = 1;
-            amrray_ix_next = amrray_ix_curr;
-            amrray_iy_next = amrray_iy_curr;
-            amrray_iz_next = amrray_iz_curr+1;
+            amrray_ix_next = ray_grid_position[0];
+            amrray_iy_next = ray_grid_position[1];
+            amrray_iz_next = ray_grid_position[2] + 1;
             //TODO : Aqui hace algo pa ver la celda donde queda, verificar como hacerlo pa nuestra lógica
             if(amrray_iz_next > this -> number_of_points_z - 1) {
                 if(this -> amr_cyclic_xyz[2]){
@@ -503,9 +560,14 @@ void spherical_regular_grid::move_photon_inside(photon &photon_i){
             }
             break;
     }
-    
+    //TODO : Calcular distancia
+    ds = sqrt(pow((ray_position[0] - photon_i.get_prev_grid_position()[0]),2) + pow((ray_position[1] - photon_i.get_prev_grid_position()[1]),2) + pow((ray_position[2] - photon_i.get_prev_grid_position()[2]),2));
+    photon_i.set_min_distance(ds);
+    std::vector<int> grid_new_position = {amrray_ix_next, amrray_iy_next, amrray_iz_next};
+    photon_i.set_grid_position(grid_new_position);
+    photon_i.set_ray_position(ray_position);
+    photon_i.is_on_grid(this->number_of_points_x,this->number_of_points_y,this->number_of_points_z);
 }
- */
 
 //TODO : Considero esta función inecesaria, el fotón comienza con una dirección aleatoria.
 //TODO : Se podría simplemente iniciar en un valor aleatorio de theta y phi , siempre va a entrar por la izquierda al
@@ -696,7 +758,7 @@ void spherical_regular_grid::move_photon_outside(photon &photon_i){
     }
 
     if(amrray_icross == 1) {
-        dummy = r_r1 / sqrt(ray_position[0] * ray_position[0] + ray_position[1] * ray_position[1] + ray_position[2] * ray_position[2]);
+        dummy = r_r1 / sqrt(x_r1 * x_r1 + y_r1 * y_r1 + z_r1 * z_r1);
         this ->entering_from_radius(photon_i,dummy,0,ray_position,x_r1,y_r1,z_r1,r_r1,theta_r1,phi_r1);
         amrray_icross = -1;
     }
@@ -1087,7 +1149,7 @@ void spherical_regular_grid::entering_from_radius(photon &photon_i, double dummy
     }
     std::vector<int> grid_position = {ix,iy,iz};
     photon_i.set_grid_position(grid_position);
-    //TODO : Encontrar celda y dejar en fotón
+    photon_i.set_ray_position(ray_position);
 }
 
 void spherical_regular_grid::entering_from_theta(photon &photon_i, int iyi, std::vector<double> &ray_position,double x_t,double y_t,double z_t,double r_t,double phi_t){
@@ -1122,6 +1184,7 @@ void spherical_regular_grid::entering_from_theta(photon &photon_i, int iyi, std:
     }
     std::vector<int> grid_position = {ix,iy,iz};
     photon_i.set_grid_position(grid_position);
+    photon_i.set_ray_position(ray_position);
 }
 
 void spherical_regular_grid::entering_from_phi(photon &photon_i, int izi, std::vector<double> &ray_position, double x_p, double y_p, double z_p, double r_p, double theta_p){
@@ -1147,4 +1210,5 @@ void spherical_regular_grid::entering_from_phi(photon &photon_i, int izi, std::v
     }
     std::vector<int> grid_position = {ix,iy,iz};
     photon_i.set_grid_position(grid_position);
+    photon_i.set_ray_position(ray_position);
 }

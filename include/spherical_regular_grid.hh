@@ -19,6 +19,14 @@ private:
     double amrray_cosp2;
     double theta1_sgn = 1;
     double theta2_sgn = -1;
+    std::vector<double> amrray_finegrid_sintsq1;
+    std::vector<double> amrray_finegrid_sintsq2;
+    std::vector<double> amrray_finegrid_costsq1;
+    std::vector<double> amrray_finegrid_costsq2;
+    std::vector<double> amrray_finegrid_sinp1;
+    std::vector<double> amrray_finegrid_sinp2;
+    std::vector<double> amrray_finegrid_cosp1;
+    std::vector<double> amrray_finegrid_cosp2;
     std::vector<std::vector<std::vector<double>>> cell_volume;
     std::vector<bool> amr_cyclic_xyz;
 
@@ -93,6 +101,8 @@ public:
                               double &theta_p2, double &phi_p2);
 
     ~spherical_regular_grid();
+
+    void compute_trigometrics_for_edges();
 };
 
 

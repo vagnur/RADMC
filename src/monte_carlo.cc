@@ -423,16 +423,16 @@ void monte_carlo::move_photon(photon& photon_i, std::mt19937& generator, std::un
         //First we obtain the actual ray and grid position of the photon
         //Then we move the photon to the next cell
         //TODO : Probar que siga funcionando para grillas cartesianas
-        if(m_grid->get_grid_type() == "spherical" && first_iteration) {
+        if(m_grid->get_grid_type() == "spherical" && first_iteration && not(photon_i.get_on_grid_condition())) {
             m_grid -> calculate_photon_new_position(photon_i);
             photon_i.set_prev_ray_position();
             photon_i.set_prev_grid_position();
             first_iteration = false;
         }
         else{
-            m_grid -> calculate_photon_new_position(photon_i);
             photon_i.set_prev_ray_position();
             photon_i.set_prev_grid_position();
+            m_grid -> calculate_photon_new_position(photon_i);
         }
         photon_i.calculate_opacity_coefficients(this -> m_dust.get_number_of_dust_species(),
                                                 this -> m_dust.get_dust_species());
@@ -449,12 +449,10 @@ void monte_carlo::move_photon(photon& photon_i, std::mt19937& generator, std::un
             }
             carry_on = false;
         } else {
-            std::cout << "aqui" << std::endl;
             dum = (1.0 - photon_i.get_albedo()) * photon_i.get_dtau() * m_stars.get_stars_information()[photon_i.get_star_source()].get_energy() / photon_i.get_alpha_A_total();
             for (int i = 0; i < m_dust.get_number_of_dust_species(); ++i) {
                 add_tmp = dum * photon_i.get_alpha_A_specie()[i];
                 m_dust.add_energy_specie(i, photon_i.get_prev_grid_position(), add_tmp);
-                std::cout << "aqui" << std::endl;
             }
             photon_i.update_tau_path_gone();
             carry_on = photon_i.get_on_grid_condition();
@@ -492,9 +490,6 @@ void monte_carlo::initialize_cartesian_regular_photons(std::mt19937& generator, 
                                       m_grid->get_number_of_points_Z());
         //We get a random direction for the photon
         this ->get_random_direction(this -> m_photons[i],generator,uniform_zero_one_distribution);
-        //TODO : Borrar estas lineas
-        std::vector<double> direction = {-0.15734385689173966,-1.3453880951885377e-2,-0.98745222860944748};
-        this -> m_photons[i].set_direction(direction);
     }
 }
 
